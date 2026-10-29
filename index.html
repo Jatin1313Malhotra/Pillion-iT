@@ -1,0 +1,1509 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<title>Pillion iT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: map pinned beside a tabbed ride panel; stacked on phones. Palette: cool road-grey, deep teal, amber route. */
+[hidden]{display:none !important}
+.theme-toggle{position:fixed;top:calc(7px + env(safe-area-inset-top,0px));right:calc(7px + env(safe-area-inset-right,0px));z-index:40;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 22px -12px rgba(20,35,32,.35);transition:transform .15s ease,box-shadow .15s ease}
+.theme-toggle:hover{transform:translateY(-1px) scale(1.04)}
+.theme-toggle:active{transform:scale(.94)}
+.theme-toggle svg{width:15px;height:15px;fill:none;stroke:curcd
+  rentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.theme-toggle .moon{display:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .theme-toggle .sun{display:none}:root:not([data-theme="light"]) .theme-toggle .moon{display:block}}
+:root[data-theme="dark"] .theme-toggle .sun{display:none}
+:root[data-theme="dark"] .theme-toggle .moon{display:block}
+:root{
+  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#142320; --ink2:#53625E; --line:#D5DCD9;
+  --accent:#0E6F61; --accent-ink:#FFFFFF; --route:#E08A00; --map:#E3E9E5; --road:#C9D3CE; --water:#CFE0E6;
+  --good:#1C7C3C; --blob-o:.6; --warn:#9A5B00; --bad:#B3341F; --info:#3451C6;
+  --f-display:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;
+  --f-body:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1816; --surface:#17231F; --ink:#E6EEEB; --ink2:#93A6A0; --line:#2A3B36;
+  --accent:#3FC7B0; --accent-ink:#06211C; --route:#F2A62C; --map:#1B2A26; --road:#2D423C; --water:#1A323A;
+  --good:#5FD184; --blob-o:.36; --warn:#F0B35A; --bad:#FF8A73; --info:#8DA3FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1816; --surface:#17231F; --ink:#E6EEEB; --ink2:#93A6A0; --line:#2A3B36;
+  --accent:#3FC7B0; --accent-ink:#06211C; --route:#F2A62C; --map:#1B2A26; --road:#2D423C; --water:#1A323A;
+  --good:#5FD184; --blob-o:.36; --warn:#F0B35A; --bad:#FF8A73; --info:#8DA3FF; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);padding-block:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1080px;margin:0 auto;display:grid;gap:16px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}
+@media(max-width:860px){.app{grid-template-columns:minmax(0,1fr)}}
+header{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font:700 28px/1 var(--f-display);letter-spacing:-.02em;margin:0}
+h1 span{color:var(--hero-hi);font-style:normal;font-weight:800;position:relative}
+h1 span::after{content:"";position:absolute;left:1px;right:1px;bottom:.1em;height:.06em;background:currentColor;opacity:.45;border-radius:2px}
+.tag{color:var(--ink2);font-size:13px}
+.hitxt{font:700 14.5px var(--f-display);letter-spacing:-.01em;color:var(--ink2)}
+.hitxt b{color:var(--accent);font-weight:800}
+.mapwrap{background:var(--map);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:sticky;top:8px}
+@media(max-width:860px){.mapwrap{position:static}}
+svg{display:block;width:100%;height:auto}
+.road{stroke:var(--road);stroke-width:7;fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.river{fill:var(--water)}
+.rt-faint{stroke:var(--ink2);stroke-opacity:.45;stroke-width:3;fill:none;stroke-dasharray:2 5;vector-effect:non-scaling-stroke}
+.rt{stroke:var(--route);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.walk{stroke:var(--accent);stroke-width:2.5;stroke-dasharray:2 4;fill:none;vector-effect:non-scaling-stroke}
+.node{fill:var(--surface);stroke:var(--ink2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.lbl{font:500 .4px var(--f-body);fill:var(--ink2);paint-order:stroke;stroke:var(--map);stroke-width:.14px}
+.pin-a{fill:var(--accent)} .pin-b{fill:var(--ink)}
+.pin-t{font:700 .36px var(--f-body);fill:var(--accent-ink);text-anchor:middle}
+.pin-b+.pin-t{fill:var(--bg)}
+.rider{fill:var(--route);stroke:var(--surface);stroke-width:2;vector-effect:non-scaling-stroke}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;font-size:12px;color:var(--ink2);border-top:1px solid var(--line);background:var(--surface)}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--route);vertical-align:middle;margin-right:6px}
+.legend i.w{border-top:2px dashed var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+/* tabs restyled further down under 'classy refresh' */
+.tabs{overflow-x:auto}
+.badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;line-height:18px;text-align:center}
+.body{padding:16px;display:grid;gap:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:420px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--ink2)}
+select,input[type=time],input[type=number]{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:15px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hint{font-size:12px;color:var(--ink2);margin:0}
+.btn{border:0;border-radius:8px;padding:11px 16px;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.sm{padding:7px 12px;font-size:13px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;background:var(--bg);cursor:pointer;text-align:left;width:100%}
+.card[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.av{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 15px var(--f-display);flex:none}
+.name{font-weight:600}
+.sub{font-size:13px;color:var(--ink2)}
+.fare{font:700 17px var(--f-body);white-space:nowrap}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font:500 12.5px var(--f-body);color:var(--ink2)}
+.stats b{color:var(--accent);font-weight:700}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid var(--line)}
+.pill.ok{color:var(--good);border-color:var(--good)} .pill.wait{color:var(--warn);border-color:var(--warn)} .pill.no{color:var(--bad);border-color:var(--bad)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.steps li{display:grid;grid-template-columns:28px 1fr auto;gap:8px;padding:8px 0;border-top:1px solid var(--line);align-items:baseline}
+.steps li:first-child{border-top:0}
+.steps li.cur{background:color-mix(in srgb,var(--route) 16%,transparent);margin:0 -8px;padding-inline:8px;border-radius:6px}
+.steps .ic{font:700 14px var(--f-mono);color:var(--accent)}
+.steps .km{font:500 12.5px var(--f-body);color:var(--ink2)}
+.empty{text-align:center;color:var(--ink2);padding:24px 8px}
+h2{font:700 17px var(--f-display);margin:0}
+.note{font-size:12px;color:var(--ink2);border-top:1px solid var(--line);padding:12px 16px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+:root{--hero-bg:#0B3B35;--hero-fg:#EAF4F1;--hero-hi:#F2A62C}
+input[type=text],input[type=password]{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:15px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink)}
+.login{max-width:880px;margin:4vh auto 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+@media(max-width:700px){.login{grid-template-columns:minmax(0,1fr);margin-top:0}}
+.hero{background:var(--hero-bg);color:var(--hero-fg);padding:28px;display:grid;gap:20px;align-content:space-between;min-width:0}
+.hero h1{font-size:42px}
+.hero h1 span{color:var(--hero-hi);font-style:normal;font-weight:800;position:relative}
+.hero h1 span::after{content:"";position:absolute;left:1px;right:1px;bottom:.08em;height:.07em;background:currentColor;opacity:.5;border-radius:2px}
+.hero p{margin:0;font-size:17px;line-height:1.35;max-width:26ch}
+.hero ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:13px;color:color-mix(in srgb,var(--hero-fg) 80%,transparent)}
+.hero li{display:flex;gap:8px;align-items:baseline}
+.hero li{align-items:center;gap:10px}
+.hero li svg{flex:none;width:36px;height:36px;padding:7px;border-radius:12px;--chip:#7EE6CF;background:var(--chip);color:#0B3B35;fill:currentColor;transform:rotate(-6deg);box-shadow:2px 3px 0 rgba(0,0,0,.28)}
+.hero li:nth-child(2) svg{--chip:#F2A62C;transform:rotate(6deg)}
+.hero svg{width:100%;max-width:260px;height:auto}
+.formside{padding:28px;display:grid;gap:14px;align-content:center;min-width:0}
+.formside h2{font-size:22px}
+.pwrow{display:flex;gap:8px}
+.pwrow input{flex:1;min-width:0}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin:0}
+.hdr-r{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.eye{width:44px;padding:0;display:grid;place-items:center;flex:none}
+.pwrow{position:relative;display:block}
+.pwrow input{padding-right:52px}
+.pwrow .eye{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:44px;height:42px;border:0;background:none;color:var(--ink2);border-radius:8px}
+.pwrow .eye:hover{color:var(--ink)}
+.pwrow .eye svg{width:24px;height:24px}
+.locrow{position:relative;display:block}
+.locrow input{padding-right:48px}
+.locrow .eye{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;background:none;color:var(--accent);border-radius:8px}
+.locrow .eye:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.locrow .eye svg{width:21px;height:21px}
+.locrow .eye[disabled]{opacity:.5}
+.eye .off{display:none}
+.eye[aria-pressed=true] .on{display:none}
+.eye[aria-pressed=true] .off{display:block}
+body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 12%,transparent) 1px,transparent 1px);background-size:22px 22px}
+.hero{position:relative;overflow:hidden;min-height:400px;padding-bottom:76px}
+.hero ul{max-width:68%}
+.hero .route{position:absolute;inset:0;width:100%;height:100%;max-width:none;z-index:0;pointer-events:none}
+.hero p,.hero li{text-shadow:0 1px 8px rgba(5,25,22,.9)}
+@media(max-width:700px){.hero ul{max-width:78%}}
+.hero .bg{position:absolute;inset:0;width:100%;height:100%;max-width:none;z-index:0}
+.hero>*:not(.bg):not(.route){position:relative;z-index:1}
+.hero h1{font-size:48px;letter-spacing:-.03em}
+.flow{animation:dash 3s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-56}}
+@media(prefers-reduced-motion:reduce){.flow{animation:none}}
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--blob-o);animation:drift 14s ease-in-out infinite alternate}
+.b1{width:46vmax;height:46vmax;left:-12vmax;top:-14vmax;background:#7EE6CF}
+.b2{width:40vmax;height:40vmax;right:-10vmax;top:4vmax;background:#8B7BFF;animation-delay:-4s}
+.b3{width:36vmax;height:36vmax;left:24vw;bottom:-18vmax;background:#F2A62C;animation-delay:-8s}
+@keyframes drift{to{transform:translate(4vmax,3vmax) scale(1.08)}}
+.grain{position:absolute;inset:0;opacity:.08;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.stk{position:absolute;display:block}
+.stk.s1{width:54px;right:9vw;top:7vh;fill:#F2A62C;transform:rotate(12deg)}
+.stk.s2{width:84px;left:6vw;bottom:14vh;fill:none;stroke:#7EE6CF;stroke-width:5;stroke-linecap:round;transform:rotate(-14deg)}
+.stk.s3{width:46px;left:12vw;top:9vh;fill:none;stroke:#8B7BFF;stroke-width:6}
+.stk.s4{width:34px;right:12vw;bottom:20vh;fill:#8B7BFF;transform:rotate(-8deg)}
+.login{border-radius:22px;background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 28px 60px -24px rgba(20,35,32,.45)}
+.hero{background:linear-gradient(155deg,#0B3B35 0%,#11504A 52%,#3B2F8F 120%)}
+#lbtn,#demo{border-radius:99px;padding:13px;font-weight:700}
+.ticker{max-width:880px;margin:18px auto 0;overflow:hidden;border-radius:99px;background:var(--ink);color:var(--bg);font:700 13px var(--f-display);letter-spacing:.1em;text-transform:uppercase;padding:10px 0;white-space:nowrap}
+.ticker div{display:inline-block;padding-left:100%;animation:tick 24s linear infinite}
+@keyframes tick{to{transform:translateX(-100%)}}
+@media(prefers-reduced-motion:reduce){.blob,.ticker div{animation:none}.ticker div{padding-left:16px}}
+
+/* ---- app screens ---- */
+input[type=date],input[type=tel]{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:15px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none;margin:1px 0 0}
+.approx{margin-left:auto}
+.ic16{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ft{display:grid;grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr);gap:8px;align-items:end}
+@media(max-width:520px){.ft{grid-template-columns:minmax(0,1fr)}.ft .swap{justify-self:end;transform:rotate(90deg)}}
+.swap{height:42px;width:40px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer;color:var(--ink2);display:grid;place-items:center}
+.swap:hover{color:var(--ink)}
+.swap svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.grp{display:grid;gap:4px;align-content:start}
+.lab{font-size:13px;font-weight:600;color:var(--ink2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:3px;gap:2px;background:var(--bg);width:max-content;max-width:100%}
+.seg button{border:0;background:none;padding:7px 14px;border-radius:99px;font-weight:600;cursor:pointer;color:var(--ink2);font-size:13px;white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sechead .sub{font-size:13px}
+.card{cursor:default;gap:10px}
+.card.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.cardhd{display:grid;gap:8px;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
+.cardhd .top,.cardhd .who{display:flex}
+.cardhd .stats{display:flex}
+.cardbody{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tagc{display:inline-flex;gap:5px;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.tagc.warn{background:color-mix(in srgb,var(--route) 24%,transparent)}
+.tagc.wmn{background:color-mix(in srgb,#E0457B 20%,transparent)}
+.chk{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);cursor:pointer}
+.kyc{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;background:var(--bg)}
+.kyc.ok{border-color:var(--good)}
+.kyc h3{margin:0;font:700 15px var(--f-display);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+.kv dt{color:var(--ink2)}
+.kv dd{margin:0;font-weight:600;font-family:var(--f-mono);font-size:13px;overflow-wrap:anywhere}
+.lock{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:13px}
+.lock b{display:block}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:99px;padding:5px 11px;font-size:13px;cursor:pointer;color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.est{font:600 14px var(--f-body);color:var(--ink)}
+.fh{font:700 16px var(--f-display);letter-spacing:-.01em}
+.rate-row .rin{display:flex;align-items:center;gap:6px;flex:0 0 160px;min-width:140px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink)}
+.rin b{font:700 18px var(--f-display)}
+.rin input{border:0;background:none;padding:10px 0;font:600 18px var(--f-body);width:100%;min-width:0;outline:none}
+.rin:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.rin i{font-style:normal;font-size:13px;color:var(--ink2);white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:13px;font-weight:600;z-index:20;max-width:calc(100vw - 32px);text-align:center}
+.pushnotif{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(-140%);width:min(380px,calc(100vw - 20px));background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 34px rgba(0,0,0,.22);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;z-index:60;transition:transform .35s cubic-bezier(.2,.8,.2,1);cursor:pointer}
+.pushnotif[hidden]{display:flex;visibility:hidden}
+.pushnotif.show{transform:translateX(-50%) translateY(0)}
+.pushnotif .pnic{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.pushnotif .pnic.ok{background:var(--good);color:#fff}
+.pushnotif .pnic.no{background:var(--bad);color:#fff}
+.pushnotif .pnic svg{width:18px;height:18px}
+.pushnotif .pnbody{min-width:0;flex:1}
+.pushnotif .pnapp{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);display:flex;justify-content:space-between;gap:8px}
+.pushnotif .pntitle{display:block;font-size:14px;font-weight:700;margin-top:1px}
+.pushnotif .pntext{display:block;font-size:13px;color:var(--ink2);margin-top:2px;line-height:1.3}
+.helmoverlay{position:fixed;inset:0;background:rgba(10,20,16,.52);display:flex;align-items:center;justify-content:center;z-index:70;padding:20px}
+.helmoverlay[hidden]{display:none}
+.helmpop{background:var(--surface);border-radius:22px;max-width:360px;width:100%;padding:26px 22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.32);animation:popin .25s cubic-bezier(.2,.9,.3,1.2)}
+.helmpop .hpic{width:58px;height:58px;border-radius:50%;background:var(--warn);color:var(--bg);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.helmpop .hpic svg{width:28px;height:28px}
+.helmpop h3{margin:0 0 6px;font-size:18px}
+.helmpop p{margin:0 0 20px;font-size:13.5px;color:var(--ink2);line-height:1.45}
+@keyframes popin{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+.declbox{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.declbox .hint{margin-bottom:6px}
+.sharebox{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.sharebox .hint{margin-bottom:6px}
+
+.bubbles{display:grid;gap:8px;max-height:300px;overflow-y:auto;padding:4px 2px}
+.bub{max-width:84%;padding:8px 12px;border-radius:14px;background:var(--bg);border:1px solid var(--line);font-size:14px;overflow-wrap:anywhere}
+.bub.me{justify-self:end;background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.bub small{display:block;opacity:.7;font-size:11px;margin-top:2px}
+.msgform{display:flex;gap:8px}
+.msgform input{flex:1;min-width:0}
+.th{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer}
+.th .grow{min-width:0;flex:1}
+.th .snip{display:block;font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none}
+.rate-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.rate-row label{flex:1;min-width:130px}
+.back{display:inline-flex;gap:6px;align-items:center;background:none;border:0;color:var(--ink2);font-weight:600;cursor:pointer;padding:0}
+.thhead{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+/* ---- classy refresh ---- */
+body{font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+h1,h2,.fh{letter-spacing:-.02em}
+h1{font-weight:800}
+h2{font-size:18px}
+select,input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],input[type=tel]{border-radius:12px;padding:12px 14px;border-color:color-mix(in srgb,var(--ink) 14%,transparent);transition:border-color .15s,box-shadow .15s}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.rate-row .rin input,.rate-row .rin input:focus{border:0;box-shadow:none;border-radius:0;padding:10px 0;background:none}
+.rate-row .rin{border-radius:12px;border-color:color-mix(in srgb,var(--ink) 14%,transparent)}
+.pwrow input{padding-right:52px}
+.btn{border-radius:12px;padding:12px 18px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 8px 16px -10px color-mix(in srgb,var(--accent) 90%,transparent)}
+.btn.ghost{box-shadow:none}
+.btn.sm{padding:8px 14px;border-radius:10px}
+.btn:disabled{box-shadow:none}
+.panel,.mapwrap{border-radius:20px}
+.panel{box-shadow:0 24px 48px -32px rgba(20,35,32,.4)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px}
+.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1.5px solid color-mix(in srgb,var(--tabc,var(--accent)) 28%,var(--line));border-radius:18px;padding:13px 4px 12px;background:color-mix(in srgb,var(--tabc,var(--accent)) 8%,var(--surface));color:var(--ink);font:800 12.5px var(--f-display);letter-spacing:-.015em;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease,background .15s ease;text-align:center}
+.tabs button .ticn{width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--tabc,var(--accent));color:var(--accent-ink);box-shadow:0 8px 16px -8px color-mix(in srgb,var(--tabc,var(--accent)) 75%,transparent);transition:transform .15s ease}
+.tabs button .ticn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs button .tlbl{display:flex;align-items:center;gap:4px;line-height:1.15}
+.tabs button:hover{border-color:var(--tabc,var(--accent));transform:translateY(-1px)}
+.tabs button:hover .ticn{transform:scale(1.08) rotate(-3deg)}
+.tabs button:active{transform:scale(.96)}
+.tabs button[aria-selected=true]{border-color:var(--tabc,var(--accent));background:color-mix(in srgb,var(--tabc,var(--accent)) 16%,var(--surface));box-shadow:0 14px 26px -18px color-mix(in srgb,var(--tabc,var(--accent)) 85%,transparent)}
+.tabs button[aria-selected=true]::after{content:'';position:absolute;left:16px;right:16px;bottom:6px;height:3px;border-radius:99px;background:var(--tabc,var(--accent))}
+.tabs .t-find{--tabc:var(--accent)}
+.tabs .t-offer{--tabc:var(--route)}
+.tabs .t-rides{--tabc:var(--good)}
+.tabs .t-inbox{--tabc:var(--info)}
+.tabs .badge{min-width:16px;padding:0 4px;line-height:15px;font-size:10px}
+@media(max-width:480px){.tabs{grid-template-columns:repeat(2,1fr)}.tabs button{flex-direction:row;justify-content:flex-start;gap:8px;padding:11px 12px;border-radius:15px}.tabs button[aria-selected=true]::after{left:10px;right:auto;top:8px;bottom:auto;width:3px;height:calc(100% - 16px);border-radius:99px}}
+.card{border-radius:16px;padding:14px;border-color:color-mix(in srgb,var(--ink) 10%,transparent)}
+.card.sel{border-color:var(--accent)}
+.seg button{font-weight:600}
+.kyc{border-radius:16px}
+.lock{border-radius:14px}
+.legend{font-size:12.5px}
+/* ---- sign up ---- */
+.formside{padding:28px;display:grid;gap:16px;align-content:center;min-width:0}
+.formside form{display:grid;gap:14px}
+.authseg{width:100%;justify-content:stretch}
+.authseg button{flex:1;text-align:center}
+.avrow{display:flex;gap:14px;align-items:center}
+.avup{position:relative;flex:none;width:72px;height:72px;border-radius:50%;border:1.5px dashed color-mix(in srgb,var(--ink) 30%,transparent);display:grid;place-items:center;color:var(--ink2);overflow:hidden;background:var(--bg)}
+.avup svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.avup img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.avtext{display:grid;gap:3px;min-width:0}
+.avtext b{font-size:14px}
+.avtext span{font-size:12.5px;color:var(--ink2)}
+.avbtn{justify-self:start;width:max-content;margin-top:4px}
+.optTag{text-transform:none;font-weight:400;color:var(--ink2);font-size:12px}
+.timehint{text-transform:none;font-weight:700;color:var(--accent);font-size:12.5px;margin-left:6px}
+.weeklist{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.weekrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.weekrow--empty{opacity:.6}
+.weekday{display:flex;flex-direction:column;min-width:64px}
+.weekday b{font-size:13px}
+.weekday span{font-size:11.5px;color:var(--ink2)}
+.weekwho{font-size:13px;text-align:right}
+.req{color:var(--bad);font-weight:800;margin-left:2px}
+.formside label,.formside .lab{font-size:13.5px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.lbltxt{display:inline-flex;align-items:baseline}
+.formside h2{letter-spacing:-.02em}
+.formside .reqnote{color:var(--ink2);font-size:12.5px;margin:-6px 0 0}
+.formside .reqnote .req{font-size:12.5px}
+.avtext b{letter-spacing:-.01em}
+.formside .seg button{font-weight:700}
+.scard{border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px;background:color-mix(in srgb,var(--bg) 55%,var(--surface) 45%)}
+.sctitle{display:flex;align-items:center;gap:7px;margin:0;font:800 13.5px var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.sctitle .ic16{width:17px;height:17px;flex:none;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:7px;padding:3px;box-sizing:content-box}
+.sctitle .optTag{margin-left:auto}
+.formside .scard label,.formside .scard .lab{font-size:13px}
+textarea{width:100%;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);border-radius:12px;padding:12px 14px;background:var(--bg);font:inherit;color:var(--ink);resize:vertical;min-height:72px}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.linklike{justify-self:end;background:none;border:0;padding:0;margin-top:-6px;color:var(--accent);font-weight:600;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.linklike:hover{opacity:.8}
+.otplogin{display:grid;gap:14px}
+.otplogin .back{display:inline-flex;gap:4px;align-items:center;background:none;border:0;color:var(--ink2);font-weight:600;font-size:13px;cursor:pointer;padding:0;width:max-content}
+.otplogin .back:hover{color:var(--ink)}
+.otplogin #otpstep1,.otplogin #otpstep2{display:grid;gap:14px}
+</style>
+</head>
+<body>
+
+<div class="aurora" id="aurora" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><div class="grain"></div>
+  <svg class="stk s1" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"/></svg>
+  <svg class="stk s2" viewBox="0 0 52 20"><path d="M3 12Q11 0 19 10T35 10T49 8"/></svg>
+  <svg class="stk s3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+  <svg class="stk s4" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"/></svg>
+</div>
+<button type="button" id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode">
+  <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>
+</button>
+<main class="login" id="login">
+  <div class="hero">
+    <svg class="bg" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><radialGradient id="glow" cx="78%" cy="18%" r="75%"><stop offset="0" stop-color="#2FA08E" stop-opacity=".5"/><stop offset="1" stop-color="#2FA08E" stop-opacity="0"/></radialGradient></defs><rect width="400" height="520" fill="url(#glow)"/><path d="M-10 480 C80 440 120 500 230 480 C300 468 350 500 410 488 L410 530 L-10 530Z" fill="#3B8FA3" fill-opacity=".16"/><g fill="#EAF4F1" fill-opacity=".05"><rect x="20" y="170" width="58" height="40" rx="4"/><rect x="250" y="150" width="70" height="46" rx="4"/><rect x="120" y="380" width="64" height="36" rx="4"/><rect x="300" y="330" width="60" height="50" rx="4"/><rect x="30" y="60" width="50" height="34" rx="4"/></g><g fill="none" stroke="#EAF4F1" stroke-opacity=".16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-10 420 L120 330 L230 350 L410 220"/><path d="M60 -10 L90 140 L200 200 L210 330 L180 530"/><path d="M-10 120 L120 140 L300 60 L410 80"/><path d="M300 -10 L280 120 L330 260 L410 300"/><path d="M-10 270 L90 250 L200 200"/></g></svg>
+    <svg class="route" id="route" aria-hidden="true"><path id="rpath" class="flow" fill="none" stroke="#F2A62C" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 12"/><g id="rstart"><circle r="26" fill="#F2A62C" fill-opacity=".25"/><rect x="-14" y="-14" width="34" height="34" rx="10" fill="#000" fill-opacity=".3"/><rect x="-17" y="-17" width="34" height="34" rx="10" fill="#F2A62C"/><path d="M-9 -1L0 -10 9 -1V9H-9Z" fill="#0B3B35" stroke="#0B3B35" stroke-width="1.6" stroke-linejoin="round"/><rect x="-2.6" y="2" width="5.2" height="7" rx="1.2" fill="#F2A62C"/></g><g id="rend"><circle r="26" fill="#7EE6CF" fill-opacity=".25"/><rect x="-14" y="-14" width="34" height="34" rx="10" fill="#000" fill-opacity=".3"/><rect x="-17" y="-17" width="34" height="34" rx="10" fill="#7EE6CF"/><rect x="-9" y="-6" width="18" height="14" rx="3" fill="#0B3B35"/><path d="M-4 -6v-3a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" fill="none" stroke="#0B3B35" stroke-width="2.2" stroke-linecap="round"/><path d="M-9 1h18" stroke="#7EE6CF" stroke-width="1.6"/><rect x="-1.6" y="-1" width="3.2" height="4" rx="1" fill="#7EE6CF"/></g></svg>
+    <h1>Pillion <span>iT</span></h1>
+    <p>Same route, same time. Why ride alone?</p>
+    <ul>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="6.5" r="2.6"/><circle cx="16" cy="6.5" r="2.6"/><path d="M3.5 20v-3a4.5 4.5 0 0 1 9 0v3z" style="stroke:var(--chip);stroke-width:1.2"/><path d="M11.5 20v-3a4.5 4.5 0 0 1 9 0v3z" style="stroke:var(--chip);stroke-width:1.2"/><rect x="1" y="13.5" width="4.2" height="6" rx="1.2" style="fill:#fff;stroke:currentColor;stroke-width:1.2"/><rect x="18.8" y="13.5" width="4.2" height="6" rx="1.2" style="fill:#fff;stroke:currentColor;stroke-width:1.2"/></svg>Find your commute buddy. Your office crew is already on your route</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 17v-2.5C2.5 9.2 6.7 5.5 12 5.5s9.5 3.7 9.5 9V17z"/><rect x="2.5" y="18.5" width="19" height="2.2" rx="1.1"/><path d="M10 10.3h9.2a.9.9 0 0 1 .9.9v2.2a.9.9 0 0 1-.9.9H11.3A1.3 1.3 0 0 1 10 12.9z" style="fill:var(--chip)"/></svg>Safe vibes only: verified riders, helmets on, live trip shared</li>
+    </ul>
+  </div>
+  <div class="formside">
+    <div class="seg authseg" role="tablist" aria-label="Account">
+      <button type="button" role="tab" data-act="authtab" data-id="in" aria-pressed="true">Sign in</button>
+      <button type="button" role="tab" data-act="authtab" data-id="up" aria-pressed="false">Create account</button>
+    </div>
+
+    <form id="loginform" novalidate>
+      <h2 id="wtitle">Hey, welcome back</h2>
+      <label for="uid"><span class="lbltxt">Email or phone number<span class="req" aria-hidden="true">*</span></span><input type="text" id="uid" autocomplete="username" placeholder="e.g. rohan@gmail.com or 98765 43210"></label>
+      <label for="upw"><span class="lbltxt">Password<span class="req" aria-hidden="true">*</span></span><span class="pwrow"><input type="password" id="upw" autocomplete="current-password" placeholder="Your password"><button class="btn ghost eye" type="button" id="showpw" aria-pressed="false" aria-label="Show password" title="Show password"><svg class="on" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.7 10.7 0 0 1 12 19C5.6 19 2 12 2 12a18.5 18.5 0 0 1 4.1-5.2M9.9 5.2A9.9 9.9 0 0 1 12 5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M2 2l20 20"/></svg></button></span></label>
+      <button type="button" class="linklike" id="forgotpw">Forgot password?</button>
+      <p class="err" id="lerr" role="alert"></p>
+      <button class="btn" type="submit" id="lbtn">Sign in</button>
+      <button class="btn ghost" type="button" id="otpbtn">Sign in with OTP</button>
+      <button class="btn ghost" type="button" id="demo">Use demo login</button>
+      <p class="hint">Prototype only. No account is checked: any email/phone of 3+ characters with a 4+ character password signs in.</p>
+    </form>
+
+    <div class="otplogin" id="otplogin" hidden>
+      <button type="button" class="back" id="otpback"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Back to sign in</button>
+      <h2 id="otptitle">Sign in with OTP</h2>
+      <p class="hint" id="otpsub">Skip the password. We will text a one-time code to your phone.</p>
+
+      <div id="otpstep1">
+        <label for="otpphone">Phone number or email<input type="text" id="otpphone" autocomplete="username" maxlength="40" placeholder="98765 43210 or rohan@gmail.com"></label>
+        <p class="err" id="otperr1" role="alert"></p>
+        <button class="btn" type="button" id="otpsend">Send OTP</button>
+      </div>
+
+      <div id="otpstep2" hidden>
+        <p class="hint">Code sent to <b id="otpphoneshow"></b>. Demo OTP: <b>123456</b></p>
+        <label for="otpcode">6-digit OTP<input type="text" id="otpcode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></label>
+        <p class="err" id="otperr2" role="alert"></p>
+        <div class="actions">
+          <button class="btn" type="button" id="otpverify">Verify &amp; sign in</button>
+          <button class="btn ghost sm" type="button" id="otpresend">Resend OTP</button>
+          <button class="btn ghost sm" type="button" id="otpchange">Change number</button>
+        </div>
+      </div>
+    </div>
+
+    <form id="signupform" novalidate hidden>
+      <h2>Create your account</h2>
+      <div class="scard">
+        <h3 class="sctitle"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.3 7.5-6.3s7.5 2.3 7.5 6.3"/></svg>Profile</h3>
+        <div class="avrow">
+          <div class="avup" id="avup"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20.5c0-4.1 3.4-6.5 7.5-6.5s7.5 2.4 7.5 6.5"/></svg><img id="avimg" alt="" hidden></div>
+          <div class="avtext"><b>Add a profile photo</b><span>Helps riders recognise each other at pickup. Optional.</span><label class="btn ghost sm avbtn" for="avfile">Upload photo</label><input type="file" id="avfile" accept="image/*" hidden></div>
+        </div>
+        <div class="seg" role="group" aria-label="What brings you here">
+          <button type="button" data-act="purpose" data-id="find" aria-pressed="true">I want to find a ride</button>
+          <button type="button" data-act="purpose" data-id="offer" aria-pressed="false">I want to offer a ride</button>
+        </div>
+      </div>
+
+      <div class="scard">
+        <h3 class="sctitle"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.2"/><circle cx="9" cy="11.2" r="1.8"/><path d="M6.3 15.6c.5-1.6 1.7-2.4 2.7-2.4s2.2.8 2.7 2.4M14 10h4M14 13.3h4"/></svg>Personal details</h3>
+        <div class="row">
+          <label for="sname"><span class="lbltxt">Full name<span class="req" aria-hidden="true">*</span></span><input type="text" id="sname" autocomplete="name" placeholder="e.g. Rohan Verma"></label>
+          <label for="sdob"><span class="lbltxt">Date of birth<span class="req" aria-hidden="true">*</span></span><input type="date" id="sdob" autocomplete="bday"></label>
+        </div>
+        <div class="grp"><span class="lab">Gender<span class="req" aria-hidden="true">*</span></span><div class="chips" role="group" aria-label="Gender">
+          <button type="button" class="chip" data-act="gender" data-id="Male" aria-pressed="false">Male</button>
+          <button type="button" class="chip" data-act="gender" data-id="Female" aria-pressed="false">Female</button>
+          <button type="button" class="chip" data-act="gender" data-id="Other" aria-pressed="false">Other</button>
+        </div></div>
+      </div>
+
+      <div class="scard">
+        <h3 class="sctitle"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Identity verification<span class="req" aria-hidden="true">*</span></h3>
+        <p class="hint" style="margin-top:-6px">Every member verifies with Aadhaar at sign-up, whether you plan to find a ride or offer one &mdash; so both sides can always trust who they are riding with.</p>
+        <div id="skyc"></div>
+      </div>
+
+      <div class="scard">
+        <h3 class="sctitle"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Account details</h3>
+        <div class="row">
+          <label for="semail"><span class="lbltxt">Email address<span class="req" aria-hidden="true">*</span></span><input type="email" id="semail" autocomplete="email" placeholder="you@gmail.com"></label>
+          <label for="sphone"><span class="lbltxt">Phone number<span class="req" aria-hidden="true">*</span></span><input type="tel" id="sphone" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="98765 43210"></label>
+        </div>
+        <p class="hint" style="margin-top:-6px">Shown to your co-rider only after a ride is confirmed, so you can call to coordinate.</p>
+        <div class="row">
+          <label for="suid"><span class="lbltxt">Choose a user ID<span class="req" aria-hidden="true">*</span></span><input type="text" id="suid" autocomplete="username" placeholder="e.g. rohan"></label>
+          <label for="supw"><span class="lbltxt">Create a password<span class="req" aria-hidden="true">*</span></span><input type="password" id="supw" autocomplete="new-password" placeholder="At least 4 characters"></label>
+        </div>
+      </div>
+
+      <div class="scard">
+        <h3 class="sctitle"><svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-4 4v-4H4z"/></svg>About you <span class="optTag">optional</span></h3>
+        <label for="sbio"><span class="lbltxt">A few lines about you</span><textarea id="sbio" maxlength="220" rows="3" placeholder="e.g. Early riser, love a good playlist, non-smoker. Ride with me on Cyber City route on weekdays."></textarea></label>
+      </div>
+
+      <p class="err" id="serr" role="alert"></p>
+      <button class="btn" type="submit" id="sbtn">Create account</button>
+      <p class="hint">Prototype only. Aadhaar verification above is simulated for this demo.</p>
+    </form>
+  </div>
+</main>
+<div class="ticker" id="ticker" aria-hidden="true"><div>Same route &#8226; Same time &#8226; Safe vibes only &#8226; Ride together &#8226; Same route &#8226; Same time &#8226; Safe vibes only &#8226; Ride together &#8226;</div></div>
+
+<div class="app" id="app" hidden>
+  <header>
+    <h1>Pillion <span>iT</span></h1>
+    <div class="hdr-r"><span class="hitxt" id="hi"></span><button class="btn ghost sm" type="button" id="logout">Sign out</button></div>
+  </header>
+
+  <div class="mapwrap">
+    <svg id="map" viewBox="0 0 28 20.8" role="img" aria-label="Map of the selected route"></svg>
+    <div class="legend"><span><i></i>Shared ride</span><span><i class="w"></i>Walk to pickup / from drop</span><span class="approx">Schematic map, distances approximate</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="view"></div>
+    <div class="note">Every ride giver is Aadhaar verified. Co-riders bring their own helmet. Share your live trip with someone you trust.</div>
+  </div>
+</div>
+<datalist id="places"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="pushnotif" id="pushnotif" role="status" aria-live="assertive" hidden></div>
+<div class="helmoverlay" id="helmoverlay" hidden role="dialog" aria-modal="true" aria-label="Helmet reminder">
+  <div class="helmpop"><div class="hpic"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 17v-2.5C3.5 9.5 7 6 12 6c5 0 8.5 3.5 8.5 8.5V17z"/><path d="M10.5 10.5h9.8M10.5 14h9.8"/></svg></div><h3>Safety first</h3><p id="helmwho"></p><p>Please don't forget to carry your helmet.</p><button type="button" class="btn" id="helmok">Got it</button></div>
+</div>
+
+<script>
+(function(){
+  /* ---------- places (lat, lng, approximate) ---------- */
+  var PLN={
+    'AIIMS':[28.567,77.209],'Adarsh Nagar':[28.719,77.171],'Anand Vihar':[28.647,77.315],'Ashok Vihar':[28.695,77.175],'Azadpur':[28.707,77.176],'Badarpur':[28.493,77.303],
+    'Bijwasan':[28.533,77.039],'Botanical Garden, Noida':[28.565,77.334],'Chhatarpur':[28.499,77.174],'Chittaranjan Park':[28.542,77.25],'Civil Lines':[28.678,77.223],
+    'Connaught Place':[28.6315,77.2167],'Cyber City Phase 2':[28.4905,77.0885],'Cyber City Phase 3':[28.498,77.093],'Cyber Hub':[28.4955,77.0895],'DLF Phase 1':[28.478,77.095],
+    'DLF Phase 2':[28.483,77.088],'DLF Phase 3':[28.492,77.096],'DLF Phase 4':[28.468,77.092],'DLF Phase 5':[28.445,77.101],'Dabri':[28.618,77.087],'Darya Ganj':[28.646,77.242],
+    'Defence Colony':[28.573,77.23],'Dhaula Kuan':[28.5922,77.1618],'Dilshad Garden':[28.685,77.322],'Dwarka Mor':[28.619,77.0332],'Dwarka Sector 10':[28.5905,77.0507],
+    'Dwarka Sector 12':[28.595,77.04],'Dwarka Sector 13':[28.568,77.062],'Dwarka Sector 14':[28.559,77.057],'Dwarka Sector 21':[28.5522,77.0583],'Dwarka Sector 22':[28.555,77.068],
+    'Dwarka Sector 23':[28.548,77.062],'Dwarka Sector 6':[28.572,77.052],'Dwarka Sector 7':[28.5745,77.061],'Dwarka Sector 9':[28.581,77.048],'Film City, Noida':[28.59,77.318],
+    'GTB Nagar':[28.6997,77.217],'Golf Course Extension Road':[28.412,77.095],'Golf Course Road':[28.436,77.098],'Greater Kailash 1':[28.548,77.242],'Greater Kailash 2':[28.534,77.247],
+    'Greater Noida - Alpha 1':[28.475,77.495],'Greater Noida - Knowledge Park':[28.465,77.49],'Greater Noida - Pari Chowk':[28.47,77.505],'Green Park':[28.559,77.206],
+    'Hari Nagar':[28.6336,77.1109],'Hauz Khas':[28.5535,77.2065],'Huda City Centre':[28.4592,77.0724],'IFFCO Chowk':[28.472,77.072],'IGI Airport T1':[28.57,77.085],
+    'IGI Airport T2':[28.561,77.092],'IGI Airport T3':[28.5562,77.1],'INA':[28.575,77.209],'ITO':[28.629,77.243],'Jamia Nagar':[28.562,77.285],'Janakpuri West':[28.6291,77.0777],
+    'Jasola':[28.539,77.29],'Jhandewalan':[28.645,77.193],'Kakrola':[28.609,77.045],'Kalindi Kunj':[28.544,77.302],'Kalkaji':[28.539,77.258],'Kamla Nagar':[28.679,77.205],
+    'Kapashera':[28.548,77.076],'Karkardooma':[28.651,77.294],'Karol Bagh':[28.6519,77.1907],'Keshav Puram':[28.69,77.157],'Khyala':[28.6378,77.0862],'Kirti Nagar':[28.6552,77.1432],
+    'Lajpat Nagar':[28.568,77.243],'Laxmi Nagar':[28.635,77.277],'MG Road, Gurugram':[28.4795,77.0802],'Mahipalpur':[28.5446,77.1252],'Malviya Nagar':[28.529,77.208],
+    'Manesar':[28.354,76.936],'Mangolpuri':[28.691,77.086],'Mayapuri':[28.6315,77.1247],'Mayur Vihar Phase 1':[28.605,77.293],'Mayur Vihar Phase 2':[28.608,77.308],
+    'Mehrauli':[28.505,77.185],'Model Town':[28.712,77.193],'Moti Nagar':[28.6557,77.1491],'Mukherjee Nagar':[28.6998,77.211],'Munirka':[28.557,77.174],'Najafgarh':[28.609,76.98],
+    'Nand Nagri':[28.699,77.294],'Naraina':[28.629,77.137],'Nehru Place':[28.5494,77.25],'Netaji Subhash Place':[28.696,77.152],'New Friends Colony':[28.562,77.273],
+    'Noida Expressway':[28.54,77.345],'Noida Extension':[28.575,77.415],'Okhla':[28.54,77.285],'Paharganj':[28.644,77.213],'Palam':[28.5985,77.0846],'Palam Vihar':[28.505,77.032],
+    'Paschim Vihar':[28.67,77.1],'Patel Nagar':[28.649,77.168],'Patparganj':[28.626,77.29],'Pitampura':[28.698,77.131],'Preet Vihar':[28.635,77.295],'Punjabi Bagh':[28.6672,77.1313],
+    'RK Puram':[28.565,77.177],'Rajendra Place':[28.643,77.177],'Rajiv Chowk, Gurugram':[28.459,77.029],'Rajouri Garden':[28.6492,77.1226],'Rohini Sector 11':[28.732,77.105],
+    'Rohini Sector 15':[28.738,77.12],'Rohini Sector 18':[28.726,77.138],'Rohini Sector 24':[28.705,77.113],'Rohini Sector 3':[28.725,77.115],'Rohini Sector 7':[28.718,77.128],
+    'Safdarjung Enclave':[28.562,77.198],'Saket':[28.5245,77.2066],'Sarai Rohilla':[28.662,77.181],'Sarita Vihar':[28.529,77.29],'Sarojini Nagar':[28.577,77.196],
+    'Sector 100, Noida':[28.548,77.385],'Sector 102, Gurugram':[28.47,76.955],'Sector 104, Noida':[28.53,77.38],'Sector 109, Gurugram':[28.485,76.97],'Sector 110, Gurugram':[28.495,76.965],
+    'Sector 110, Noida':[28.515,77.36],'Sector 12, Gurugram':[28.458,77.015],'Sector 128, Noida':[28.505,77.365],'Sector 135, Noida':[28.495,77.378],'Sector 137, Noida':[28.488,77.385],
+    'Sector 14, Gurugram':[28.4695,77.036],'Sector 142, Noida':[28.48,77.392],'Sector 15, Gurugram':[28.455,76.995],'Sector 15, Noida':[28.5872,77.3086],'Sector 150, Noida':[28.465,77.4],
+    'Sector 16, Noida':[28.5838,77.3144],'Sector 17, Gurugram':[28.47,76.998],'Sector 18, Noida':[28.5697,77.326],'Sector 19, Noida':[28.5765,77.3337],'Sector 20, Noida':[28.582,77.342],
+    'Sector 21, Noida':[28.5945,77.329],'Sector 22, Noida':[28.584,77.347],'Sector 24, Noida':[28.5945,77.32],'Sector 26, Noida':[28.596,77.31],'Sector 27, Noida':[28.602,77.316],
+    'Sector 29, Noida':[28.5869,77.3334],'Sector 30, Noida':[28.579,77.315],'Sector 31, Noida':[28.57,77.319],'Sector 32, Noida':[28.5825,77.353],'Sector 33, Noida':[28.576,77.36],
+    'Sector 34, Noida':[28.59,77.36],'Sector 37, Noida':[28.562,77.338],'Sector 39, Noida':[28.555,77.34],'Sector 4, Gurugram':[28.478,77.023],'Sector 41, Noida':[28.565,77.348],
+    'Sector 43, Gurugram':[28.448,77.092],'Sector 44, Noida':[28.558,77.355],'Sector 45, Noida':[28.55,77.348],'Sector 46, Gurugram':[28.435,77.087],'Sector 47, Gurugram':[28.428,77.092],
+    'Sector 48, Gurugram':[28.422,77.088],'Sector 49, Gurugram':[28.419,77.083],'Sector 5, Gurugram':[28.47,77.028],'Sector 50, Gurugram':[28.435,77.072],'Sector 50, Noida':[28.572,77.365],
+    'Sector 51, Gurugram':[28.427,77.062],'Sector 51, Noida':[28.568,77.37],'Sector 52, Gurugram':[28.44,77.058],'Sector 52, Noida':[28.59,77.37],'Sector 53, Gurugram':[28.448,77.075],
+    'Sector 53, Noida':[28.595,77.375],'Sector 54 Chowk':[28.4393,77.1003],'Sector 55, Gurugram':[28.43,77.105],'Sector 56, Gurugram':[28.424,77.101],'Sector 57, Gurugram':[28.415,77.108],
+    'Sector 58, Gurugram':[28.407,77.103],'Sector 61, Noida':[28.618,77.368],'Sector 62, Noida':[28.627,77.365],'Sector 63, Noida':[28.618,77.376],'Sector 65, Gurugram':[28.398,77.078],
+    'Sector 66, Gurugram':[28.4,77.068],'Sector 67, Gurugram':[28.392,77.062],'Sector 68, Gurugram':[28.385,77.057],'Sector 69, Gurugram':[28.378,77.052],'Sector 7, Gurugram':[28.462,77.018],
+    'Sector 70, Gurugram':[28.37,77.047],'Sector 76, Noida':[28.572,77.385],'Sector 78, Noida':[28.578,77.39],'Sector 82, Gurugram':[28.455,76.998],'Sector 83, Gurugram':[28.448,76.99],
+    'Sector 84, Gurugram':[28.46,76.982],'Sector 9, Gurugram':[28.465,77.008],'Sector 92, Gurugram':[28.43,76.97],'Sector 93, Gurugram':[28.435,76.962],'Sector 93, Noida':[28.535,77.37],
+    'Sector 94, Noida':[28.532,77.362],'Sector 95, Gurugram':[28.442,76.955],'Seelampur':[28.67,77.268],'Shahdara':[28.669,77.289],'Shalimar Bagh':[28.7158,77.157],
+    'Signature Towers':[28.481,77.086],'Sikanderpur':[28.4817,77.0931],'Sohna Road, Gurugram':[28.424,77.039],'South City 1':[28.442,77.062],'South City 2':[28.433,77.053],
+    'South Extension':[28.572,77.222],'Subhash Nagar':[28.6418,77.1095],'Sushant Lok 1':[28.464,77.086],'Sushant Lok 2':[28.448,77.075],'Tilak Nagar':[28.6368,77.0965],
+    'Udyog Vihar':[28.5075,77.084],'Udyog Vihar Phase 5':[28.511,77.081],'Uttam Nagar East':[28.619,77.056],'Uttam Nagar West':[28.6212,77.0506],'Vasant Kunj':[28.5206,77.1587],
+    'Vasant Vihar':[28.558,77.158],'Vikaspuri':[28.6428,77.0699],'Vivek Vihar':[28.672,77.315],'Wazirpur':[28.698,77.168],'Yamuna Vihar':[28.695,77.273],
+    'Akshardham':[28.6127,77.2773],    'Arjan Garh':[28.4745,77.1392],    'Ashok Park Main':[28.6668,77.1442],
+    'Ashram':[28.5771,77.2583],    'Badkal Mor':[28.4044,77.3091],    'Bahadurgarh City':[28.6833,76.925],
+    'Barakhamba Road':[28.6303,77.2249],    'Basai Chowk, Gurugram':[28.456,76.995],    'Belvedere Towers, Gurugram':[28.4885,77.0905],
+    'Central Secretariat':[28.6148,77.2122],    'Chandni Chowk':[28.6506,77.2303],    'Chawri Bazar':[28.6469,77.2267],
+    'Chirag Delhi':[28.5471,77.2362],    'Dabri Mor - Janakpuri South':[28.6184,77.0677],    'Dashrath Puri':[28.602,77.0742],
+    'Delhi Aerocity':[28.5478,77.1183],    'Delhi Gate':[28.6382,77.2412],    'Dwarka':[28.5921,77.046],
+    'Dwarka Expressway, Gurugram':[28.4985,77.0445],    'ESI Hospital':[28.656,77.1296],    'East Azad Nagar':[28.6667,77.2853],
+    'Escorts Mujesar':[28.4283,77.2997],    'Faridabad NIT':[28.3862,77.3161],    'Ghevra':[28.6895,77.0106],
+    'Ghitorni':[28.4875,77.1562],    'Gokulpuri':[28.7039,77.279],    'Govind Puri':[28.5355,77.2621],
+    'Guru Dronacharya':[28.4766,77.0894],    'Haiderpur Badli Mor':[28.7302,77.1562],    'Hazrat Nizamuddin':[28.5884,77.2529],
+    'Hero Honda Chowk, Gurugram':[28.4515,77.0345],    'IIT Delhi':[28.5458,77.1927],    'Inderlok':[28.6718,77.1711],
+    'Indraprastha':[28.6214,77.244],    'Jaffrabad':[28.6823,77.2744],    'Jahangirpuri':[28.7324,77.1637],
+    'Jama Masjid':[28.6507,77.2334],    'Janakpuri East':[28.6219,77.0855],    'Jangpura':[28.5835,77.2449],
+    'Jasola Apollo':[28.5362,77.2865],    'Jasola Vihar Shaheen Bagh':[28.5319,77.2898],    'Jhilmil':[28.6711,77.2834],
+    'Jor Bagh':[28.5884,77.2187],    'Kailash Colony':[28.555,77.2437],    'Kanhaiya Nagar':[28.6835,77.1623],
+    'Kashmere Gate':[28.6675,77.228],    'Kaushambi':[28.6479,77.3193],    'Kherki Daula, Gurugram':[28.415,76.99],
+    'Kohat Enclave':[28.6948,77.1314],    'Krishna Nagar':[28.6557,77.2878],    'Lok Kalyan Marg':[28.6075,77.1994],
+    'Madipur':[28.6598,77.1227],    'Majlis Park':[28.7169,77.1636],    'Mandi House':[28.6253,77.2342],
+    'Mansarovar Park':[28.6723,77.2919],    'Maujpur-Babarpur':[28.6898,77.277],    'Mayur Vihar Pocket 1':[28.6029,77.3092],
+    'Mohan Estate':[28.5141,77.2976],    'Moolchand':[28.5675,77.2358],    'Moulsari Avenue, Gurugram':[28.4645,77.0885],
+    'Mundka':[28.6816,77.0338],    'Nangloi':[28.6836,77.0683],    'Nangloi Railway Station':[28.6796,77.0633],
+    'Nawada':[28.6002,77.0437],    'Nehru Enclave':[28.5452,77.2512],    'New Delhi Railway Station':[28.6433,77.2194],
+    'New Gurugram - Sector 108':[28.485,76.995],    'New Gurugram - Sector 109':[28.49,76.99],    'Nirman Vihar':[28.6354,77.2857],
+    'Noida City Centre':[28.575,77.356],    'Noida Golf Course':[28.581,77.343],    'Noida Sector 52':[28.5944,77.37],
+    'Okhla Bird Sanctuary':[28.5649,77.3233],    'Okhla NSIC':[28.5436,77.274],    'Old Faridabad':[28.3773,77.3186],
+    'Panchsheel Park':[28.5525,77.2168],    'Paschim Vihar East':[28.6701,77.1092],    'Patel Chowk':[28.6214,77.2144],
+    'Peeragarhi':[28.6788,77.0984],    'Phase 1, Gurugram':[28.481,77.0975],    'Phase 2, Gurugram':[28.4825,77.0905],
+    'Phase 3, Gurugram':[28.489,77.0945],    'Pratap Nagar':[28.6775,77.1931],    'Pulbangash':[28.6677,77.2101],
+    'Qutub Minar':[28.5245,77.1855],    'RK Ashram Marg':[28.6425,77.2102],    'Rajiv Chowk, New Delhi':[28.6327,77.2197],
+    'Ramesh Nagar':[28.6519,77.1294],    'Rithala':[28.7213,77.1073],    'Rohini Sector 18-19':[28.7103,77.1178],
+    'Rohini West':[28.6999,77.1252],    'Sadar Bazaar Cantonment':[28.5774,77.1136],    'Samaypur Badli':[28.7451,77.1377],
+    'Sector 23, Gurugram':[28.4715,77.045],    'Sector 28, Faridabad':[28.4249,77.3064],    'Sector 29, Gurugram':[28.463,77.0735],
+    'Sector 31, Gurugram':[28.4495,77.0575],    'Sector 56, Noida':[28.605,77.37],    'Shadipur':[28.6519,77.1601],
+    'Shakurpur':[28.6872,77.1443],    'Shankar Vihar':[28.5674,77.1135],    'Shastri Nagar':[28.6711,77.1823],
+    'Shastri Park':[28.6672,77.2514],    'Shiv Vihar':[28.7191,77.283],    'Shivaji Stadium':[28.6279,77.2159],
+    'Shyam Park':[28.6757,77.2952],    'Sultanpur':[28.5021,77.1793],    'Surajmal Stadium':[28.6845,77.0931],
+    'Tagore Garden':[28.6422,77.1158],    'Tikri Border':[28.6835,76.9801],    'Tikri Kalan':[28.6868,76.9949],
+    'Tis Hazari':[28.6667,77.2159],    'Trilokpuri Sanjay Lake':[28.6085,77.3105],    'Tughlakabad':[28.5115,77.2697],
+    'Udyog Bhawan':[28.6134,77.2117],    'Udyog Nagar':[28.6815,77.0784],    'Udyog Vihar Phase 1':[28.5055,77.0905],
+    'Udyog Vihar Phase 2':[28.5045,77.0875],    'Udyog Vihar Phase 3':[28.503,77.0855],    'Udyog Vihar Phase 4':[28.5065,77.088],
+    'Vaishali':[28.6468,77.3378],    'Vatika Chowk, Gurugram':[28.386,77.0545],    'Vidhan Sabha':[28.6859,77.2165],
+    'Vinobapuri':[28.5631,77.2454],    'Vishwavidyalaya':[28.6996,77.2109],    'Vodafone Belvedere, Gurugram':[28.4855,77.088],
+    'Welcome':[28.6706,77.2746],    'Yamuna Bank':[28.6228,77.2737]
+  };
+  var NAMES=Object.keys(PLN).sort(),P={},LC={};
+  NAMES.forEach(function(n){var q=PLN[n];P[n]=[(q[1]-77)*97.8,(28.72-q[0])*111.2];LC[n.toLowerCase()]=n});
+  var CORR=[
+    ["Dwarka Sector 21", "Dwarka Mor", "Uttam Nagar East", "Janakpuri West", "Tilak Nagar", "Rajouri Garden", "Kirti Nagar", "Karol Bagh", "Connaught Place"],
+    ["Dhaula Kuan", "IGI Airport T3", "Mahipalpur", "Udyog Vihar", "Cyber City Phase 2", "Sikanderpur", "Huda City Centre"],
+    ["Janakpuri West", "Palam", "IGI Airport T3"],
+    ["Paschim Vihar", "Punjabi Bagh", "Naraina", "Dhaula Kuan", "Munirka", "Nehru Place"],
+    ["Cyber City Phase 2", "MG Road, Gurugram", "Sector 54 Chowk", "Sector 56, Gurugram"],
+    ["Dwarka Sector 6", "Dwarka Sector 7", "Dwarka Sector 9", "Dwarka Sector 10", "Dwarka Sector 12", "Dwarka Sector 13", "Dwarka Sector 14", "Dwarka Sector 21"],
+    ["Najafgarh", "Dwarka Mor", "Uttam Nagar West", "Uttam Nagar East"],
+    ["Pitampura", "Rohini Sector 24", "Rohini Sector 11", "Rohini Sector 3", "Rohini Sector 7", "Rohini Sector 18"],
+    ["Shalimar Bagh", "Ashok Vihar", "Keshav Puram", "Netaji Subhash Place", "Pitampura"],
+    ["Model Town", "Mukherjee Nagar", "GTB Nagar", "Kamla Nagar", "Azadpur"],
+    ["Karol Bagh", "Rajendra Place", "Patel Nagar", "Paharganj", "Connaught Place", "ITO", "Darya Ganj"],
+    ["Vasant Kunj", "Vasant Vihar", "RK Puram", "Munirka", "Hauz Khas", "Green Park", "Malviya Nagar", "Saket", "Chhatarpur"],
+    ["Hauz Khas", "AIIMS", "South Extension", "Lajpat Nagar", "Defence Colony", "Greater Kailash 1", "Greater Kailash 2", "Kalkaji", "Nehru Place"],
+    ["Nehru Place", "Okhla", "Jamia Nagar", "Jasola", "Sarita Vihar", "Kalindi Kunj", "Badarpur"],
+    ["Connaught Place", "ITO", "Laxmi Nagar", "Preet Vihar", "Karkardooma", "Anand Vihar", "Patparganj", "Mayur Vihar Phase 1", "Mayur Vihar Phase 2"],
+    ["ITO", "Shahdara", "Seelampur", "Yamuna Vihar", "Nand Nagri", "Dilshad Garden", "Vivek Vihar"],
+    ["Dhaula Kuan", "IGI Airport T1", "IGI Airport T2", "IGI Airport T3", "Mahipalpur", "Kapashera", "Bijwasan"],
+    ["Sikanderpur", "MG Road, Gurugram", "IFFCO Chowk", "DLF Phase 1", "DLF Phase 2", "DLF Phase 3"],
+    ["Sikanderpur", "Signature Towers", "DLF Phase 4", "Sushant Lok 1", "South City 1", "South City 2", "Golf Course Road"],
+    ["Golf Course Road", "Golf Course Extension Road", "Sector 55, Gurugram", "Sector 57, Gurugram", "Sector 58, Gurugram", "Sector 65, Gurugram", "Sector 66, Gurugram", "Sector 67, Gurugram", "Sector 68, Gurugram", "Sector 69, Gurugram", "Sector 70, Gurugram"],
+    ["Sector 54 Chowk", "Sector 43, Gurugram", "Sector 46, Gurugram", "Sector 47, Gurugram", "Sector 48, Gurugram", "Sector 49, Gurugram", "Sector 50, Gurugram", "Sector 51, Gurugram", "Sector 52, Gurugram", "Sector 53, Gurugram"],
+    ["Rajiv Chowk, Gurugram", "Sector 4, Gurugram", "Sector 5, Gurugram", "Sector 7, Gurugram", "Sector 9, Gurugram", "Sector 12, Gurugram", "Sector 15, Gurugram", "Sector 17, Gurugram"],
+    ["Palam Vihar", "Sector 82, Gurugram", "Sector 83, Gurugram", "Sector 84, Gurugram", "Sector 92, Gurugram", "Sector 93, Gurugram", "Sector 95, Gurugram", "Sector 102, Gurugram", "Sector 109, Gurugram", "Sector 110, Gurugram"],
+    ["Golf Course Extension Road", "Sohna Road, Gurugram", "Manesar"],
+    ["Sector 15, Noida", "Sector 16, Noida", "Film City, Noida", "Sector 18, Noida", "Sector 19, Noida"],
+    ["Sector 18, Noida", "Botanical Garden, Noida", "Sector 37, Noida", "Sector 39, Noida", "Sector 45, Noida"],
+    ["Sector 15, Noida", "Sector 21, Noida", "Sector 24, Noida", "Sector 26, Noida", "Sector 27, Noida"],
+    ["Sector 18, Noida", "Sector 30, Noida", "Sector 31, Noida"],
+    ["Film City, Noida", "Sector 61, Noida", "Sector 62, Noida", "Sector 63, Noida"],
+    ["Sector 19, Noida", "Sector 20, Noida", "Sector 22, Noida", "Sector 32, Noida", "Sector 33, Noida", "Sector 34, Noida"],
+    ["Botanical Garden, Noida", "Sector 50, Noida", "Sector 51, Noida", "Sector 52, Noida", "Sector 53, Noida"],
+    ["Sector 37, Noida", "Noida Expressway", "Sector 93, Noida", "Sector 94, Noida", "Sector 100, Noida", "Sector 104, Noida", "Sector 110, Noida", "Sector 128, Noida", "Sector 135, Noida", "Sector 137, Noida", "Sector 142, Noida", "Sector 150, Noida"],
+    ["Sector 135, Noida", "Greater Noida - Pari Chowk", "Greater Noida - Alpha 1", "Greater Noida - Knowledge Park"],
+    ["Sector 41, Noida", "Sector 44, Noida", "Noida Extension"],
+    ["Kalindi Kunj", "Sector 15, Noida"],
+    ["Mayur Vihar Phase 1", "Sector 18, Noida"]
+  ];
+  var ROAD=1.3, DEMO_OTP='123456';
+  var dl=document.getElementById('places');
+  dl.innerHTML=NAMES.map(function(n){return '<option value="'+n+'"></option>'}).join('');
+
+  /* ---------- small helpers ---------- */
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function fmt(x){return x.toFixed(1)}
+  function fmtRad(x){return x<1?Math.round(x*1000)+' m':fmt(x)+' km'}
+  function ini(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2)}
+  function p2(n){return (n<10?'0':'')+n}
+  function d(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1])}
+  function iso(x){return x.getFullYear()+'-'+p2(x.getMonth()+1)+'-'+p2(x.getDate())}
+  function parseD(s){var a=s.split('-');return new Date(+a[0],a[1]-1,+a[2])}
+  function isWk(s){var g=parseD(s).getDay();return g>0&&g<6}
+  function fd(s){try{return parseD(s).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}catch(e){return s}}
+  function defDate(){var x=new Date();while(x.getDay()===0||x.getDay()===6)x.setDate(x.getDate()+1);return iso(x)}
+  function toMin(t){var a=t.split(':');return +a[0]*60+ +a[1]}
+  function addMin(t,m){var v=(Math.round(toMin(t)+m)%1440+1440)%1440;return p2(Math.floor(v/60))+':'+p2(v%60)}
+  function t12(t){var a=t.split(':'),h=+a[0],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+a[1]+' '+ap}
+  function nowHM(){var x=new Date();return p2(x.getHours())+':'+p2(x.getMinutes())}
+  function canon(v){return LC[String(v).trim().toLowerCase()]||''}
+  function nameFrom(id){var w=id.replace(/[._\-\d@]+/g,' ').trim().split(' ')[0]||id;return w.charAt(0).toUpperCase()+w.slice(1)}
+  function fareFor(rate,km){return rate<=0?0:Math.max(10,Math.round(km*rate/5)*5)}
+  function routeKm(names){var k=0;for(var i=1;i<names.length;i++)k+=d(P[names[i-1]],P[names[i]]);return k*ROAD}
+  function nearest(p){var b=null,bd=1e9;NAMES.forEach(function(n){var x=d(P[n],p);if(x<bd){bd=x;b=n}});return b}
+  function nearestTo(lat,lng){return nearest([(lng-77)*97.8,(28.72-lat)*111.2])}
+
+  var SHIELD='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>';
+  var HELM='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17v-2.5C3.5 9.5 7 6 12 6c5 0 8.5 3.5 8.5 8.5V17z"/><path d="M10.5 10.5h9.8M10.5 14h9.8"/></svg>';
+  var LOCK='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  var WOMAN='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="M12 14v7M8.5 18.5h7"/></svg>';
+  var LOCPIN='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  var PHONE='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2C9.5 21 3 14.5 3 6a2 2 0 0 1 2-2z"/></svg>';
+  var LOCATE='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>';
+  var CHAT='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5z"/></svg>';
+  var DECLINE_REASONS=['Timing does not match my route','Already matched with another rider','My route changed today','Ride is full for this trip'];
+  var CANCEL_REASONS=['Personal emergency','Plan changed','Found another ride','Not travelling that day','Running too late to make it'];
+  (function(){
+    var root=document.documentElement,btn=document.getElementById('themeToggle');
+    if(!btn)return;
+    var saved=null;try{saved=localStorage.getItem('pillion-theme')}catch(e){}
+    if(saved==='light'||saved==='dark')root.setAttribute('data-theme',saved);
+    function active(){
+      var a=root.getAttribute('data-theme');
+      if(a==='light'||a==='dark')return a;
+      return (window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+    }
+    function sync(){
+      var t=active(),next=t==='dark'?'light':'dark';
+      btn.setAttribute('aria-pressed',String(t==='dark'));
+      btn.setAttribute('aria-label','Switch to '+next+' mode');
+      btn.title='Switch to '+next+' mode';
+    }
+    sync();
+    btn.addEventListener('click',function(){
+      var next=active()==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem('pillion-theme',next)}catch(e){}
+      sync();
+    });
+  })();
+  var SWAP='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/></svg>';
+  var BACK='<svg class="ic16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  var TAB_FIND='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
+  var TAB_OFFER='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l3 5"/><path d="M10 9h4"/><path d="M15 14h4l2 3"/></svg>';
+  var TAB_RIDES='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h13l-3.2 3.3L18 10.6H5"/></svg>';
+  var TAB_INBOX='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-4 4v-4H4z"/></svg>';
+
+  /* ---------- geometry ---------- */
+  function cum(a){var c=[0];for(var i=1;i<a.length;i++)c.push(c[i-1]+d(a[i-1],a[i]));return c}
+  function proj(p,a){
+    var c=cum(a),best=null;
+    for(var i=0;i<a.length-1;i++){
+      var A=a[i],B=a[i+1],dx=B[0]-A[0],dy=B[1]-A[1],L2=dx*dx+dy*dy;
+      var t=L2?Math.max(0,Math.min(1,((p[0]-A[0])*dx+(p[1]-A[1])*dy)/L2)):0;
+      var q=[A[0]+t*dx,A[1]+t*dy],dist=d(p,q);
+      if(!best||dist<best.dist)best={dist:dist,s:c[i]+t*Math.sqrt(L2),pt:q,seg:i};
+    }
+    return best;
+  }
+  function slice(a,p1,p2){var out=[p1.pt];for(var i=p1.seg+1;i<=p2.seg;i++)out.push(a[i]);out.push(p2.pt);return out}
+  function ptsOf(route){return route.map(function(n){return P[n]})}
+
+  /* ---------- sample rides (weekday commuters) ---------- */
+  var rides=[
+    {id:'r1',who:'Priya Nair',gender:'Female',phone:'98765 10231',bike:'Activa 6G',repeat:true,time:'08:30',rtime:'18:30',rate:3.5,route:['Janakpuri West','Palam','IGI Airport T3','Mahipalpur','Udyog Vihar','Cyber City Phase 2']},
+    {id:'r2',who:'Arjun Mehta',gender:'Male',phone:'98765 20342',bike:'Pulsar 150',repeat:true,time:'08:45',rtime:'18:45',rate:3,route:['Tilak Nagar','Naraina','Dhaula Kuan','Mahipalpur','Udyog Vihar','Cyber City Phase 2','Sikanderpur']},
+    {id:'r3',who:'Neha Kapoor',gender:'Female',phone:'98765 30453',bike:'Jupiter',repeat:true,time:'09:00',rtime:'18:00',rate:4,route:['Dwarka Sector 21','Dwarka Mor','Uttam Nagar East','Janakpuri West','Tilak Nagar','Rajouri Garden','Kirti Nagar','Karol Bagh','Connaught Place']},
+    {id:'r4',who:'Rohit Sharma',gender:'Male',phone:'98765 40564',bike:'Splendor',repeat:true,time:'09:00',rtime:'18:00',rate:3,route:['Uttam Nagar East','Janakpuri West','Palam','Mahipalpur','Cyber City Phase 3']},
+    {id:'r5',who:'Anjali Verma',gender:'Female',phone:'98765 50675',bike:'Access 125',repeat:true,time:'09:15',rtime:'18:15',rate:3.5,route:['Paschim Vihar','Punjabi Bagh','Naraina','Dhaula Kuan','Munirka','Nehru Place']},
+    {id:'r6',who:'Karan Malhotra',gender:'Male',phone:'98765 60786',bike:'Classic 350',repeat:true,time:'08:15',rtime:'19:00',rate:4.5,route:['Dwarka Mor','Uttam Nagar East','Janakpuri West','Palam','IGI Airport T3','Cyber City Phase 2','MG Road, Gurugram']},
+    {id:'r7',who:'Vikas Gupta',gender:'Male',phone:'98765 70897',bike:'FZ-S',repeat:true,time:'08:50',rtime:'18:40',rate:3,route:['Saket','Vasant Kunj','Mahipalpur','Cyber City Phase 2','Huda City Centre']}
+  ];
+  var liveReqs=[];
+
+  /* ---------- state (in memory only) ---------- */
+  var S={tab:'find',from:'Janakpuri West',to:'Cyber City Phase 2',date:defDate(),trip:'one',rdate:defDate(),radius:1,
+    sel:null,touched:false,confirm:null,helm:false,nav:null,steps:[],navPts:[],cache:{},err:'',leaveTime:'',rleaveTime:'',declining:null,declineReason:null,cancelling:null,cancelReason:null,womenOnly:false,autoWeek:false,weekDates:null,weekKeys:[],sharing:null,shareLoc:null,locating:null,acct:'',
+    reqs:[],mine:[],threads:[],thread:null,inboxTab:'msg',incoming:[],name:'',phone:'',nid:1,
+    kyc:{state:'none',aad:'',consent:false,err:'',last4:'',name:'',dob:''},
+    offer:{from:'Janakpuri West',via:'',to:'Cyber City Phase 2',date:defDate(),time:'08:30',ret:true,rtime:'18:30',repeat:true,bike:'Activa 6G',rate:3.5,err:''}};
+
+  function legsOf(r){
+    var a=[{key:r.id+'o',r:r,route:r.route,time:r.time}];
+    if(r.rtime)a.push({key:r.id+'r',r:r,route:r.route.slice().reverse(),time:r.rtime});
+    return a;
+  }
+  function matchLeg(l,from,to,date){
+    var r=l.r;
+    if(r.repeat?!isWk(date):r.date!==date)return null;
+    if(!P[from]||!P[to]||from===to)return null;
+    var a=ptsOf(l.route),pa=proj(P[from],a),pb=proj(P[to],a);
+    if(pa.dist>S.radius||pb.dist>S.radius||pa.s>=pb.s-0.3)return null;
+    var km=(pb.s-pa.s)*ROAD;
+    return {l:l,r:r,pa:pa,pb:pb,km:km,a:a,fare:fareFor(r.rate,km),pick:addMin(l.time,pa.s*ROAD/22*60),drop:addMin(l.time,pb.s*ROAD/22*60)};
+  }
+  function inWindow(sec,m){
+    if(!sec.wtime)return true;
+    var want=toMin(sec.wtime),pk=toMin(m.pick);
+    return pk>=want-60&&pk<=want+120;
+  }
+  function searchSec(sec){
+    var out=[];
+    rides.forEach(function(r){
+      if(r.ownerAcct&&r.ownerAcct===S.acct)return;
+      if(r.taken)return;
+      if(S.womenOnly&&r.gender!=='Female')return;
+      legsOf(r).forEach(function(l){
+        var m=matchLeg(l,sec.from,sec.to,sec.date);
+        if(m&&inWindow(sec,m)){m.from=sec.from;m.to=sec.to;m.date=sec.date;m.key=l.key+'|'+sec.tag;S.cache[m.key]=m;out.push(m)}
+      });
+    });
+    out.sort(function(a,b){return a.pa.dist-b.pa.dist||toMin(a.l.time)-toMin(b.l.time)});
+    return out;
+  }
+  function reqFor(key){var x=S.reqs.filter(function(z){return z.key===key})[0];if(x)return x;return liveReqs.filter(function(z){return z.key===key&&z.requesterAcct===S.acct})[0]}
+  function threadFor(id,who,ctx,pick,leave){
+    var t=S.threads.filter(function(x){return x.id===id})[0];
+    if(!t){t={id:id,who:who,ctx:ctx,pick:pick,leave:leave,msgs:[],unread:0};S.threads.unshift(t)}
+    return t;
+  }
+  function unreadCount(){
+    return S.threads.reduce(function(a,t){return a+t.unread},0)+S.incoming.filter(function(x){return x.state==='pending'}).length;
+  }
+  var toastT;
+  function toast(msg){var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},3200)}
+  var pushT,pushHideT;
+  function pushHide(el){el.classList.remove('show');clearTimeout(pushHideT);pushHideT=setTimeout(function(){el.hidden=true},300)}
+  function pushNotify(title,body,kind,onTap){
+    var el=$('pushnotif');if(!el)return;
+    clearTimeout(pushT);clearTimeout(pushHideT);
+    el.innerHTML='<span class="pnic '+(kind||'ok')+'">'+HELM+'</span><span class="pnbody"><span class="pnapp"><span>Pillion iT</span><span>now</span></span><span class="pntitle">'+esc(title)+'</span><span class="pntext">'+esc(body)+'</span></span>';
+    el.hidden=false;
+    requestAnimationFrame(function(){el.classList.add('show')});
+    el.onclick=function(){pushHide(el);if(onTap)onTap()};
+    pushT=setTimeout(function(){pushHide(el)},4500);
+    try{
+      if('Notification' in window){
+        if(Notification.permission==='granted'){new Notification(title,{body:body,tag:'pillion-it'})}
+        else if(Notification.permission!=='denied'){Notification.requestPermission().then(function(perm){if(perm==='granted')new Notification(title,{body:body,tag:'pillion-it'})})}
+      }
+    }catch(e){}
+  }
+  function showHelmet(name){
+    var ov=$('helmoverlay');if(!ov)return;
+    $('helmwho').textContent=name?('Riding with '+name+'.'):'';
+    ov.hidden=false;
+  }
+  function closeHelmet(){var ov=$('helmoverlay');if(ov)ov.hidden=true}
+
+  /* ---------- map ---------- */
+  function curMatch(){return S.sel?S.cache[S.sel]:null}
+  function drawMap(){
+    var pts=[],route=null,A=null,B=null,m=null;
+    if(S.tab==='offer'){
+      var o=S.offer,nm=[o.from];if(o.via&&o.via!==o.from&&o.via!==o.to)nm.push(o.via);nm.push(o.to);
+      if(P[o.from]&&P[o.to]&&o.from!==o.to){nm.forEach(function(n){if(P[n])pts.push(P[n])});route=pts.slice();A=o.from;B=o.to}
+      else{if(P[o.from]){pts.push(P[o.from]);A=o.from}if(P[o.to]){pts.push(P[o.to]);B=o.to}}
+    }else{
+      if(P[S.from]){pts.push(P[S.from]);A=S.from}
+      if(P[S.to]){pts.push(P[S.to]);B=S.to}
+      m=S.tab==='find'?curMatch():null;
+      if(m)m.a.forEach(function(p){pts.push(p)});
+    }
+    if(!pts.length)NAMES.forEach(function(n){pts.push(P[n])});
+    var xs=pts.map(function(p){return p[0]}),ys=pts.map(function(p){return p[1]});
+    var minx=Math.min.apply(null,xs),maxx=Math.max.apply(null,xs),miny=Math.min.apply(null,ys),maxy=Math.max.apply(null,ys);
+    var w=Math.max(maxx-minx,6)*1.4,h=Math.max(maxy-miny,4.5)*1.4,AR=28/20.8;
+    if(w/h<AR)w=h*AR;else h=w/AR;
+    var cx=(minx+maxx)/2,cy=(miny+maxy)/2,x0=cx-w/2,y0=cy-h/2;
+    var fs=w*0.027,pr=w*0.016;
+    var g='<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="var(--map)"/>';
+    CORR.forEach(function(c){g+='<polyline class="road" points="'+c.map(function(n){return P[n].join(',')}).join(' ')+'"/>'});
+    if(m){
+      g+='<polyline class="rt-faint" points="'+m.a.map(function(p){return p.join(',')}).join(' ')+'"/>';
+      g+='<polyline class="rt" points="'+slice(m.a,m.pa,m.pb).map(function(p){return p.join(',')}).join(' ')+'"/>';
+      g+='<polyline class="walk" points="'+P[m.from].join(',')+' '+m.pa.pt.join(',')+'"/>';
+      g+='<polyline class="walk" points="'+m.pb.pt.join(',')+' '+P[m.to].join(',')+'"/>';
+      if(S.nav!==null&&S.navPts[S.nav]){var q=S.navPts[S.nav];g+='<circle class="rider" cx="'+q[0]+'" cy="'+q[1]+'" r="'+pr*0.7+'"/>'}
+    }
+    if(route)g+='<polyline class="rt" points="'+route.map(function(p){return p.join(',')}).join(' ')+'"/>';
+    var order=[];if(A)order.push(A);if(B)order.push(B);
+    if(m)m.l.route.forEach(function(n){order.push(n)});
+    if(S.tab==='offer'&&route)[S.offer.via].forEach(function(n){if(P[n])order.push(n)});
+    NAMES.forEach(function(n){order.push(n)});
+    var placed=[],seen={};
+    order.forEach(function(n){
+      if(seen[n])return;seen[n]=1;var p=P[n];
+      if(p[0]<x0||p[0]>x0+w||p[1]<y0||p[1]>y0+h)return;
+      var right=p[0]>x0+w*0.62,lw=n.length*fs*0.56+w*0.02;
+      var rx0=right?p[0]-lw:p[0]-w*0.01,rx1=right?p[0]+w*0.01:p[0]+lw,ry0=p[1]-fs*1.25,ry1=p[1]+fs*0.4;
+      if(rx0<x0||rx1>x0+w)return;
+      for(var i=0;i<placed.length;i++){var q=placed[i];if(rx0<q[2]+fs*0.3&&rx1>q[0]-fs*0.3&&ry0<q[3]&&ry1>q[1])return}
+      placed.push([rx0,ry0,rx1,ry1]);
+      g+='<circle class="node" cx="'+p[0]+'" cy="'+p[1]+'" r="'+w*0.006+'"/>';
+      g+='<text class="lbl" x="'+(p[0]+(right?-1:1)*w*0.011)+'" y="'+(p[1]-w*0.008)+'" text-anchor="'+(right?'end':'start')+'" style="font-size:'+fs+'px;stroke-width:'+fs*0.35+'px">'+esc(n)+'</text>';
+    });
+    function pin(n,cls,t){var p=P[n];return '<circle class="'+cls+'" cx="'+p[0]+'" cy="'+p[1]+'" r="'+pr+'"/><text class="pin-t" x="'+p[0]+'" y="'+(p[1]+pr*0.35)+'" style="font-size:'+pr*1.05+'px">'+t+'</text>'}
+    if(A)g+=pin(A,'pin-a','A');
+    if(B&&B!==A)g+=pin(B,'pin-b','B');
+    var svg=$('map');svg.setAttribute('viewBox',x0+' '+y0+' '+w+' '+h);svg.innerHTML=g;
+  }
+
+  /* ---------- directions ---------- */
+  function buildNav(m){
+    var sl=slice(m.a,m.pa,m.pb),steps=[],pts=[];
+    steps.push({t:'Walk to pickup near '+nearest(m.pa.pt),km:m.pa.dist*ROAD});pts.push(P[m.from]);
+    var prev=sl[0];
+    for(var i=1;i<sl.length;i++){
+      var cur=sl[i],end=i===sl.length-1;
+      if(d(prev,cur)<0.05){prev=cur;continue}
+      var turn='';
+      if(!end&&steps.length>1){var nx=sl[i+1],cr=(cur[0]-prev[0])*(nx[1]-cur[1])-(cur[1]-prev[1])*(nx[0]-cur[0]);turn=Math.abs(cr)<.3?'Continue past':(cr>0?'Turn right at':'Turn left at')}
+      steps.push({t:(end?'Reach drop near ':steps.length===1?'Ride towards ':turn+' ')+nearest(cur),km:d(prev,cur)*ROAD});
+      pts.push(prev);prev=cur;
+    }
+    steps.push({t:'Walk to '+m.to,km:m.pb.dist*ROAD});pts.push(sl[sl.length-1]);
+    S.navPts=pts;return steps;
+  }
+
+  /* ---------- views ---------- */
+  function tabsHtml(){
+    var u=unreadCount();
+    var t=[['find','Find a ride',TAB_FIND,'t-find'],['offer','Offer a ride',TAB_OFFER,'t-offer'],['rides','Your rides',TAB_RIDES,'t-rides'],['inbox','Inbox',TAB_INBOX,'t-inbox']];
+    $('tabs').innerHTML=t.map(function(x){
+      return '<button role="tab" class="'+x[3]+'" data-tab="'+x[0]+'" aria-selected="'+(S.tab===x[0])+'"><span class="ticn">'+x[2]+'</span><span class="tlbl">'+x[1]+(x[0]==='inbox'&&u?'<span class="badge">'+u+'</span>':'')+'</span></button>';
+    }).join('');
+  }
+
+  function card(m){
+    var r=m.r,key=m.key,sel=S.sel===key,rq=reqFor(key);
+    var h='<article class="card'+(sel?' sel':'')+'"><button type="button" class="cardhd" data-act="sel" data-id="'+key+'" aria-expanded="'+sel+'">'+
+      '<span class="top"><span class="who"><span class="av">'+ini(r.who)+'</span><span><span class="name">'+esc(r.who)+'</span><span class="sub" style="display:block">'+esc(r.bike)+' · leaves '+t12(m.l.time)+'</span></span></span><span class="fare">'+(m.fare?'₹'+m.fare:'Free')+'</span></span>'+
+      '<span class="stats"><span>Pickup <b>~'+t12(m.pick)+'</b></span><span>Walk <b>'+fmt(m.pa.dist*ROAD)+' km</b></span><span>Ride <b>'+fmt(m.km)+' km</b></span></span>'+
+      '<span class="tags">'+(r.gender==='Female'?'<span class="tagc wmn">'+WOMAN+'Women rider</span>':'')+'<span class="tagc">'+SHIELD+'Aadhaar verified</span><span class="tagc warn">'+HELM+'Bring your own helmet</span></span></button>';
+    if(sel){
+      h+='<div class="cardbody">';
+      if(!rq){
+        if(S.confirm===key){
+          h+='<label class="chk" for="helm"><input type="checkbox" id="helm"'+(S.helm?' checked':'')+'><span>I will bring my own helmet for this ride</span></label>'+
+             '<div class="actions"><button type="button" class="btn sm" data-act="send" data-id="'+key+'"'+(S.helm?'':' disabled')+'>Send request</button><button type="button" class="btn ghost sm" data-act="noconf">Cancel</button></div>';
+        }else{
+          h+='<div class="actions"><button type="button" class="btn sm" data-act="connect" data-id="'+key+'">Connect</button><button type="button" class="btn ghost sm" data-act="msg" data-id="'+key+'">Message</button></div>';
+        }
+      }else{
+        h+='<div class="actions"><span class="pill '+(rq.state==='accepted'?'ok':'wait')+'">'+(rq.state==='accepted'?'Accepted · meet near '+esc(nearest(m.pa.pt))+' at '+t12(m.pick):'Request sent, waiting')+'</span>'+
+           (rq.state==='accepted'&&r.phone?'<a class="btn ghost sm" href="tel:+91'+r.phone.replace(/\s/g,'')+'">'+PHONE+'Call '+esc(r.who.split(' ')[0])+' · '+r.phone+'</a>':'')+
+           '<button type="button" class="btn ghost sm" data-act="msg" data-id="'+key+'">Message</button>'+
+           (rq.state==='accepted'?'<button type="button" class="btn ghost sm" data-act="sharelive" data-id="'+key+'">'+LOCPIN+'Share live location</button><button type="button" class="btn sm" data-act="navstart" data-id="'+key+'">'+(S.nav===null?'Start navigation':'Restart')+'</button>':'')+'</div>';
+        if(rq.state==='accepted'&&S.sharing===key)h+=shareBoxHtml(key,shareMsg(m.from,m.to,m.pick,r.who));
+      }
+      var steps=buildNav(m);S.steps=steps;
+      h+='<ol class="steps">'+steps.map(function(s,i){return '<li class="'+(S.nav===i?'cur':'')+'"><span class="ic">'+(i+1)+'</span><span>'+esc(s.t)+'</span><span class="km">'+fmt(s.km)+' km</span></li>'}).join('')+'</ol>';
+      if(S.nav!==null)h+='<div class="actions"><button type="button" class="btn sm" data-act="navnext"'+(S.nav>=steps.length-1?' disabled':'')+'>Next step</button><button type="button" class="btn ghost sm" data-act="navstop">End</button></div>';
+      h+='</div>';
+    }
+    return h+'</article>';
+  }
+
+  function find(){
+    S.cache={};
+    var h='<div class="body"><div class="ft"><label for="from">From<span class="locrow"><input type="text" id="from" list="places" autocomplete="off" placeholder="Search a place" value="'+esc(S.from)+'"><button type="button" class="eye" data-act="geoloc" data-id="from" aria-label="Use my current location" title="Use my current location"'+(S.locating==='from'?' disabled':'')+'>'+LOCPIN+'</button></span></label>'+
+      '<button type="button" class="swap" data-act="swap" aria-label="Swap From and To" title="Swap">'+SWAP+'</button>'+
+      '<label for="to">To<span class="locrow"><input type="text" id="to" list="places" autocomplete="off" placeholder="Search a place" value="'+esc(S.to)+'"><button type="button" class="eye" data-act="geoloc" data-id="to" aria-label="Use my current location" title="Use my current location"'+(S.locating==='to'?' disabled':'')+'>'+LOCPIN+'</button></span></label></div>';
+    h+='<div class="row"><label for="date">'+(S.autoWeek?'Week starting':'Date')+'<input type="date" id="date" value="'+S.date+'"></label>'+
+      '<div class="grp"><span class="lab">Trip</span><div class="seg" role="group" aria-label="Trip type"><button type="button" data-act="trip" data-id="one" aria-pressed="'+(S.trip==='one')+'"'+(S.autoWeek?' disabled':'')+'>One way</button><button type="button" data-act="trip" data-id="round" aria-pressed="'+(S.trip==='round')+'"'+(S.autoWeek?' disabled':'')+'>Round trip</button></div></div></div>';
+    h+='<label for="wtime">Leaving around <span class="optTag">optional</span>'+(S.leaveTime?'<span class="timehint">'+t12(S.leaveTime)+'</span>':'')+'<input type="time" id="wtime" value="'+S.leaveTime+'"></label>';
+    h+='<p class="hint" style="margin-top:-6px">We will show rides leaving up to 1 hr earlier and 2 hr later than this time.</p>';
+    if(S.trip==='round'&&!S.autoWeek){
+      h+='<label for="rdate">Return date<input type="date" id="rdate" value="'+S.rdate+'" min="'+S.date+'"></label>';
+      h+='<label for="rwtime">Return leaving around <span class="optTag">optional</span>'+(S.rleaveTime?'<span class="timehint">'+t12(S.rleaveTime)+'</span>':'')+'<input type="time" id="rwtime" value="'+S.rleaveTime+'"></label>';
+    }
+    h+='<label for="rad">Pickup and drop within <span id="rv" style="color:var(--ink);text-transform:none;letter-spacing:0">'+fmtRad(S.radius)+'</span> of the route<input type="range" id="rad" min="0.5" max="2" step="0.25" value="'+S.radius+'"></label>';
+    h+='<label class="chk" for="womenOnly"><input type="checkbox" id="womenOnly"'+(S.womenOnly?' checked':'')+'><span>Women riders only &mdash; show rides from verified women riders</span></label>';
+    h+='<label class="chk" for="autoWeek"><input type="checkbox" id="autoWeek"'+(S.autoWeek?' checked':'')+'><span><b>Auto-match me every weekday</b><br>Find this week\u2019s rides on this route in one go, instead of searching every day</span></label>';
+    if(!P[S.from]||!P[S.to]){
+      h+='<p class="empty">Choose both places from the list. The live app searches every address in the city.</p>';
+    }else if(S.autoWeek){
+      h+=weekView();
+    }else{
+      var secs=[{title:'Going',from:S.from,to:S.to,date:S.date,tag:'g',wtime:S.leaveTime}];
+      if(S.trip==='round')secs.push({title:'Return',from:S.to,to:S.from,date:S.rdate,tag:'b',wtime:S.rleaveTime});
+      var first=null;
+      secs.forEach(function(sec){
+        var ms=searchSec(sec);if(!first&&ms.length)first=ms[0];
+        h+='<div class="sechead"><h2>'+sec.title+': '+(ms.length?ms.length+' bike'+(ms.length>1?'s':''):'no bikes')+'</h2><span class="sub">'+esc(sec.from)+' → '+esc(sec.to)+' · '+fd(sec.date)+(sec.wtime?' · around '+t12(sec.wtime):'')+'</span></div>';
+        if(!ms.length)h+='<p class="empty">'+(!isWk(sec.date)?'Most riders go Monday to Friday. Pick a weekday.':sec.wtime?'No bikes leaving near '+t12(sec.wtime)+' on this route. Try a different time, or clear it to see every ride today.':S.womenOnly?'No women riders on this route right now. Try a wider distance or a different time, or turn off \u2018Women riders only\u2019 to see every ride.':'No bikes on this route yet. Try a wider distance, or ask a colleague to post their ride.')+'</p>';
+        ms.forEach(function(m){h+=card(m)});
+      });
+      if(!S.touched&&!S.sel&&first){S.sel=first.key;S.autoSel=true;return find()}
+    }
+    return h+'</div>';
+  }
+
+  function weekdayDates(startIso,count){
+    var d=parseD(startIso),out=[];
+    function wk(x){return x.getDay()>0&&x.getDay()<6}
+    while(!wk(d))d.setDate(d.getDate()+1);
+    while(out.length<count){out.push(iso(d));d.setDate(d.getDate()+1);while(!wk(d))d.setDate(d.getDate()+1)}
+    return out;
+  }
+
+  function weekView(){
+    var dates=weekdayDates(S.date,5);
+    S.weekDates=dates;
+    var rows=dates.map(function(dt,i){
+      var ms=searchSec({from:S.from,to:S.to,date:dt,tag:'wk'+i,wtime:S.leaveTime});
+      return {date:dt,ms:ms};
+    });
+    var keys=[];
+    rows.forEach(function(r){if(r.ms.length)keys.push(r.ms[0].key)});
+    S.weekKeys=keys;
+    var h='<div class="sechead"><h2>This week: '+keys.length+' of '+rows.length+' days matched</h2><span class="sub">'+esc(S.from)+' → '+esc(S.to)+(S.leaveTime?' · around '+t12(S.leaveTime):'')+'</span></div>';
+    h+='<div class="weeklist">';
+    rows.forEach(function(r){
+      var dow=parseD(r.date).toLocaleDateString('en-IN',{weekday:'short'});
+      if(r.ms.length){
+        var m=r.ms[0];
+        h+='<div class="weekrow"><div class="weekday"><b>'+dow+'</b><span>'+fd(r.date)+'</span></div><div class="weekwho">'+esc(m.r.who)+' · '+esc(m.r.bike)+' · '+t12(m.l.time)+(r.ms.length>1?' <span class="sub">+'+(r.ms.length-1)+' more</span>':'')+'</div></div>';
+      }else{
+        h+='<div class="weekrow weekrow--empty"><div class="weekday"><b>'+dow+'</b><span>'+fd(r.date)+'</span></div><div class="weekwho sub">No ride yet</div></div>';
+      }
+    });
+    h+='</div>';
+    if(keys.length){
+      var pending=keys.filter(function(k){return !reqFor(k)});
+      if(pending.length){
+        h+='<label class="chk" for="helm"><input type="checkbox" id="helm"'+(S.helm?' checked':'')+'><span>I\u2019ll wear a helmet and follow basic road safety on every ride</span></label>';
+        h+='<button type="button" class="btn" data-act="weeksend"'+(S.helm?'':' disabled')+'>Connect for the week ('+pending.length+')</button>';
+        h+='<p class="hint">We\u2019ll send a request to each matched day\u2019s rider in one go &mdash; replies land in your Inbox.</p>';
+      }else{
+        h+='<p class="hint">Requests already sent for this week. Check your Inbox for replies.</p>';
+      }
+    }
+    return h;
+  }
+
+  function kycHtml(){
+    var k=S.kyc,h;
+    if(k.state==='verified'){
+      h='<div class="kyc ok"><h3>'+SHIELD+'Aadhaar verified <span class="pill ok">Verified</span></h3>'+
+        '<dl class="kv"><dt>Name</dt><dd>'+esc(k.name)+'</dd><dt>Aadhaar</dt><dd>XXXX XXXX '+esc(k.last4)+'</dd><dt>Date of birth</dt><dd>'+esc(k.dob)+'</dd></dl>'+
+        '<p class="hint">Demo data. In the live app, name and date of birth come from your Aadhaar record after the OTP.</p>'+
+        '<div class="actions"><button type="button" class="btn ghost sm" data-act="kreset">Verify again</button></div></div>';
+    }else if(k.state==='otp'){
+      h='<div class="kyc"><h3>'+SHIELD+'Enter the OTP</h3><p class="hint">An OTP was sent to the mobile number linked with Aadhaar XXXX XXXX '+esc(k.last4)+'. Demo OTP: <b>'+DEMO_OTP+'</b></p>'+
+        '<label for="otp">6-digit OTP<input type="text" id="otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></label>'+
+        '<p class="err" role="alert">'+esc(k.err)+'</p>'+
+        '<div class="actions"><button type="button" class="btn sm" data-act="verify">Verify</button><button type="button" class="btn ghost sm" data-act="resend">Resend OTP</button><button type="button" class="btn ghost sm" data-act="kreset">Change number</button></div></div>';
+    }else{
+      h='<div class="kyc"><h3>'+SHIELD+'Verify with Aadhaar <span class="pill wait">Required</span></h3>'+
+        '<p class="hint">Required for every account, whether you plan to find a ride or offer one. This keeps every co-rider safe.</p>'+
+        '<label for="aad">Aadhaar number<input type="text" id="aad" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="XXXX XXXX XXXX" value="'+esc(fmtAad(k.aad))+'"></label>'+
+        '<label class="chk" for="kconsent"><input type="checkbox" id="kconsent"'+(k.consent?' checked':'')+'><span>I agree to verify my identity with Aadhaar OTP. Pillion iT keeps only my name, date of birth and the last 4 digits.</span></label>'+
+        '<p class="err" role="alert">'+esc(k.err)+'</p>'+
+        '<div class="actions"><button type="button" class="btn sm" data-act="sendotp">Send OTP</button></div>'+
+        '<p class="hint">Prototype: no real Aadhaar check happens. Please do not enter a real number here.</p></div>';
+    }
+    return h;
+  }
+  function fmtAad(v){return String(v).replace(/\D/g,'').slice(0,12).replace(/(\d{4})(?=\d)/g,'$1 ')}
+  function shareMsg(from,to,pick,withName){
+    return 'Hi, I am riding with '+withName+' on Pillion iT from '+from+' to '+to+', pickup around '+pick+'. Sharing this so you know I am safe.';
+  }
+  function shareBoxHtml(id,msg){
+    var loc=(S.shareLoc&&S.shareLoc.id===id)?S.shareLoc.link:'';
+    var full=msg+(loc?' Live location: '+loc:'');
+    var wa='https://wa.me/?text='+encodeURIComponent(full),sm='sms:?body='+encodeURIComponent(full);
+    return '<div class="sharebox"><p class="hint">'+(loc?'Live location added to the message. ':'Turn on location access to add a live map link, or send it without one. ')+'Choose where to send it.</p>'+
+      '<div class="actions"><a class="btn sm" href="'+wa+'" target="_blank" rel="noopener">'+CHAT+'WhatsApp</a>'+
+      '<a class="btn ghost sm" href="'+sm+'">Message (SMS)</a>'+
+      '<button type="button" class="btn ghost sm" data-act="shareclose">Close</button></div></div>';
+  }
+  function renderSKyc(){var el=$('skyc');if(el)el.innerHTML=kycHtml()}
+
+  function offerView(){
+    var o=S.offer,names=[o.from];if(o.via&&o.via!==o.from&&o.via!==o.to)names.push(o.via);names.push(o.to);
+    var okR=P[o.from]&&P[o.to]&&o.from!==o.to;
+    var km=okR?routeKm(names):0,est=fareFor(o.rate,km);
+    var h='<div class="body">';
+    h+='<h2>Your ride</h2><div class="ft"><label for="ofrom">Starting from<span class="locrow"><input type="text" id="ofrom" list="places" autocomplete="off" placeholder="Search a place" value="'+esc(o.from)+'"><button type="button" class="eye" data-act="geoloc" data-id="ofrom" aria-label="Use my current location" title="Use my current location"'+(S.locating==='ofrom'?' disabled':'')+'>'+LOCPIN+'</button></span></label>'+
+      '<button type="button" class="swap" data-act="oswap" aria-label="Swap start and end" title="Swap">'+SWAP+'</button>'+
+      '<label for="oto">Going to<span class="locrow"><input type="text" id="oto" list="places" autocomplete="off" placeholder="Search a place" value="'+esc(o.to)+'"><button type="button" class="eye" data-act="geoloc" data-id="oto" aria-label="Use my current location" title="Use my current location"'+(S.locating==='oto'?' disabled':'')+'>'+LOCPIN+'</button></span></label></div>';
+    h+='<label for="ovia">Pass through (optional)<input type="text" id="ovia" list="places" autocomplete="off" placeholder="Add a stop on the way" value="'+esc(o.via)+'"></label>';
+    h+='<div class="row"><label for="odate">Date<input type="date" id="odate" value="'+o.date+'"></label><label for="otime">Leaving at'+(o.time?'<span class="timehint">'+t12(o.time)+'</span>':'')+'<input type="time" id="otime" value="'+o.time+'"></label></div>';
+    h+='<label class="chk" for="orep"><input type="checkbox" id="orep"'+(o.repeat?' checked':'')+'><span>Repeat every weekday (Mon to Fri)</span></label>';
+    h+='<label class="chk" for="oret"><input type="checkbox" id="oret"'+(o.ret?' checked':'')+'><span>I also ride back in the evening</span></label>';
+    if(o.ret)h+='<label for="ortime">Return leaving at'+(o.rtime?'<span class="timehint">'+t12(o.rtime)+'</span>':'')+'<input type="time" id="ortime" value="'+o.rtime+'"></label>';
+    h+='<label for="obike">Your bike<input type="text" id="obike" maxlength="30" placeholder="e.g. Activa 6G" value="'+esc(o.bike)+'"></label>';
+    h+='<div class="lock">'+LOCK+'<span><b>Co-rider brings their own helmet</b>Required on every ride. Co-riders see this before they send a request.</span></div>';
+    h+='<div class="grp"><span class="fh">Fare per km</span><span class="hint">You can change it any time</span><div class="rate-row"><label class="rin" for="orate" aria-label="Fare in rupees per km"><b>₹</b><input type="number" id="orate" min="0" max="8" step="0.5" value="'+o.rate+'"><i>per km</i></label>'+
+      '<div class="chips" role="group" aria-label="Quick fare">'+[0,2,3,4,5].map(function(v){return '<button type="button" class="chip" data-act="rate" data-id="'+v+'" aria-pressed="'+(+o.rate===v)+'">'+(v?'₹'+v:'Free')+'</button>'}).join('')+'</div></div>'+
+      '<span class="est">'+(okR?fmt(km)+' km · '+(est?'₹'+est+' per co-rider for the full route':'Free ride'):'Pick two different places to see the fare')+'</span><p class="hint">Fuel cost share only. Co-riders can see the fare before they connect.</p></div>';
+    h+='<p class="err" id="oerr" role="alert">'+esc(o.err)+'</p>';
+    h+='<div class="actions"><button type="button" class="btn" data-act="post">Post my ride</button></div>';
+    return h+'</div>';
+  }
+
+  function ridesView(){
+    var h='<div class="body"><h2>Rides you offered</h2>';
+    if(!S.mine.length)h+='<div class="empty">You have not posted a ride yet.<div class="actions" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-tab="offer">Offer a ride</button></div></div>';
+    S.mine.forEach(function(r){
+      h+='<article class="card"><div class="top"><div><div class="name">'+esc(r.route[0])+' → '+esc(r.route[r.route.length-1])+'</div><div class="sub">'+(r.repeat?'Mon to Fri':fd(r.date))+' · '+t12(r.time)+(r.rtime?' · back '+t12(r.rtime):'')+' · '+esc(r.bike)+'</div></div><span class="pill ok">Live</span></div>'+
+        '<div class="tags"><span class="tagc">'+SHIELD+'Aadhaar verified</span><span class="tagc warn">'+HELM+'Co-rider brings helmet</span></div>'+
+        '<div class="rate-row"><label class="rin" for="mr-'+r.id+'" aria-label="Fare in rupees per km"><b>₹</b><input type="number" id="mr-'+r.id+'" min="0" max="8" step="0.5" value="'+r.rate+'"><i>per km</i></label>'+
+        '<button type="button" class="btn sm" data-act="saverate" data-id="'+r.id+'">Save fare</button><button type="button" class="btn ghost sm" data-act="cancelride" data-id="'+r.id+'">Cancel ride</button></div></article>';
+    });
+    h+='<h2>Rides you booked</h2>';
+    if(!S.reqs.length)h+='<div class="empty">No bookings yet.<div class="actions" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-tab="find">Find a ride</button></div></div>';
+    S.reqs.forEach(function(q){
+      var isLiveAccepted=q.state==='accepted'&&q.ownerAcct;
+      h+='<article class="card"><div class="top"><div><div class="name">'+esc(q.from)+' → '+esc(q.to)+'</div><div class="sub">'+fd(q.date)+' · pickup ~'+t12(q.pick)+' · with '+esc(q.ownerWho||q.who)+'</div></div><span class="fare">'+(q.fare?'₹'+q.fare:'Free')+'</span></div>'+
+        (q.state==='declined'?'<div class="sub" style="margin-top:4px">Declined: '+esc(q.reason||'')+'</div>':'')+
+        (q.state==='cancelled'?'<div class="sub" style="margin-top:4px">You cancelled: '+esc(q.reason||'')+'</div>':'');
+      if(isLiveAccepted&&S.cancelling===q.key){
+        h+='<div class="declbox"><p class="hint">Why are you cancelling? '+esc((q.ownerWho||q.who).split(' ')[0])+' will be notified with this reason.</p><div class="chips" role="group" aria-label="Cancellation reason">'+CANCEL_REASONS.map(function(rs,ri){return '<button type="button" class="chip" data-act="cancelchip" data-id="'+ri+'" aria-pressed="'+(S.cancelReason===ri)+'">'+esc(rs)+'</button>'}).join('')+'</div><div class="actions"><button type="button" class="btn sm" data-act="cancelsend" data-id="'+q.key+'"'+(S.cancelReason==null?' disabled':'')+'>Send cancellation</button><button type="button" class="btn ghost sm" data-act="cancelback">Back</button></div></div>';
+      }else{
+        h+='<div class="actions"><span class="pill '+(q.state==='accepted'?'ok':(q.state==='declined'||q.state==='cancelled')?'no':'wait')+'">'+(q.state==='accepted'?'Accepted':q.state==='declined'?'Declined':q.state==='cancelled'?'Cancelled':'Waiting for '+esc(q.who.split(' ')[0]))+'</span><button type="button" class="btn ghost sm" data-act="msgreq" data-id="'+q.key+'">Message</button><button type="button" class="btn ghost sm" data-act="'+(isLiveAccepted?'cancelbook':'cancelreq')+'" data-id="'+q.key+'">'+((q.state==='declined'||q.state==='cancelled')?'Remove':'Cancel')+'</button></div>';
+      }
+      h+='</article>';
+    });
+    return h+'</div>';
+  }
+
+  function inboxView(){
+    var pend=S.incoming.filter(function(x){return x.state==='pending'}).length;
+    var h='<div class="body"><div class="seg" role="group" aria-label="Inbox section"><button type="button" data-act="itab" data-id="msg" aria-pressed="'+(S.inboxTab==='msg')+'">Messages</button><button type="button" data-act="itab" data-id="req" aria-pressed="'+(S.inboxTab==='req')+'">Requests'+(pend?' ('+pend+')':'')+'</button></div>';
+    if(S.inboxTab==='req'){
+      if(!S.incoming.length)h+='<div class="empty">Requests to join your rides show up here.</div>';
+      S.incoming.forEach(function(q){
+        h+='<article class="card"><div class="top"><div class="who"><span class="av">'+ini(q.who)+'</span><div><div class="name">'+esc(q.who)+'</div><div class="sub">Pickup near '+esc(q.from)+', drop near '+esc(q.to)+' · '+t12(q.time)+'</div></div></div>'+
+          (q.state==='pending'?'':'<span class="pill '+(q.state==='accepted'?'ok':'no')+'">'+(q.state==='accepted'?'Accepted':q.state==='cancelled'?'Cancelled by rider':'Declined')+'</span>')+'</div>'+
+          '<div class="tags"><span class="tagc warn">'+HELM+'Will bring own helmet</span></div>'+
+          (q.state==='declined'&&q.reason?'<div class="sub" style="margin-top:4px">Reason sent: '+esc(q.reason)+'</div>':'')+
+          (q.state==='cancelled'&&q.reason?'<div class="sub" style="margin-top:4px">'+esc(q.who.split(' ')[0])+' said: '+esc(q.reason)+'</div>':'')+
+          (q.state==='pending'?(S.declining===q.id?
+            '<div class="declbox"><p class="hint">Why are you declining? A notification with this reason will be sent to '+esc(q.who.split(' ')[0])+'.</p><div class="chips" role="group" aria-label="Decline reason">'+DECLINE_REASONS.map(function(rs,ri){return '<button type="button" class="chip" data-act="declchip" data-id="'+ri+'" aria-pressed="'+(S.declineReason===ri)+'">'+esc(rs)+'</button>'}).join('')+'</div><div class="actions"><button type="button" class="btn sm" data-act="declsend" data-id="'+q.id+'"'+(S.declineReason==null?' disabled':'')+'>Send decline</button><button type="button" class="btn ghost sm" data-act="declcancel">Back</button></div></div>'
+            :'<div class="actions"><button type="button" class="btn sm" data-act="acc" data-id="'+q.id+'">Accept</button><button type="button" class="btn ghost sm" data-act="dec" data-id="'+q.id+'">Decline</button></div>'):'')+
+          (q.state==='accepted'?'<div class="actions">'+(q.phone?'<a class="btn ghost sm" href="tel:+91'+q.phone.replace(/\s/g,'')+'">'+PHONE+'Call '+esc(q.who.split(' ')[0])+' · '+q.phone+'</a>':'')+'<button type="button" class="btn ghost sm" data-act="sharelive" data-id="'+q.id+'">'+LOCPIN+'Share live location</button></div>'+(S.sharing===q.id?shareBoxHtml(q.id,shareMsg(q.from,q.to,q.time,q.who)):''):'')+'</article>';
+      });
+    }else if(S.thread){
+      var t=S.threads.filter(function(x){return x.id===S.thread})[0];
+      if(!t){S.thread=null;return inboxView()}
+      h+='<div class="thhead"><button type="button" class="back" data-act="back">'+BACK+'Inbox</button><div style="text-align:right"><div class="name">'+esc(t.who)+'</div><div class="sub">'+esc(t.ctx)+'</div></div></div>';
+      h+='<div class="bubbles" id="bubbles" tabindex="0" aria-label="Messages with '+esc(t.who)+'">'+t.msgs.map(function(x){return '<div class="bub'+(x.me?' me':'')+'">'+esc(x.t)+'<small>'+x.at+'</small></div>'}).join('')+'</div>';
+      if(t.id!=='team')h+='<form class="msgform" id="msgform"><input type="text" id="msg" maxlength="300" autocomplete="off" placeholder="Type a message" aria-label="Message"><button class="btn" type="submit">Send</button></form>';
+    }else{
+      if(!S.threads.length)h+='<div class="empty">No messages yet. Connect with a rider to start a chat.</div>';
+      S.threads.forEach(function(t){
+        var last=t.msgs[t.msgs.length-1];
+        h+='<button type="button" class="th" data-act="open" data-id="'+t.id+'"><span class="av">'+ini(t.who)+'</span><span class="grow"><span class="name">'+esc(t.who)+'</span><span class="snip">'+esc(last?last.t:t.ctx)+'</span></span>'+(t.unread?'<span class="dot" aria-label="Unread"></span>':'')+'</button>';
+      });
+    }
+    return h+'</div>';
+  }
+
+  function render(){
+    S.incoming=liveReqs.filter(function(x){return x.ownerAcct===S.acct});
+    S.incoming.forEach(function(x){
+      if(x.state==='cancelled'&&x.cancelNotified===false){
+        x.cancelNotified=true;
+        var fn=x.who.split(' ')[0];
+        pushNotify(fn+' cancelled the ride','Sorry, due to '+(x.reason||'a change of plan')+', I’m cancelling the ride. The ride is open again for someone else on the same route to book.','no',function(){S.tab='inbox';S.inboxTab='req';render()});
+      }
+    });
+    liveReqs.forEach(function(x){if(x.requesterAcct===S.acct&&!S.reqs.some(function(z){return z.key===x.key}))S.reqs.unshift(x)});
+    var a=document.activeElement,keep=a&&a.id;
+    tabsHtml();
+    var v=$('view');
+    v.innerHTML=S.tab==='find'?find():S.tab==='offer'?offerView():S.tab==='rides'?ridesView():inboxView();
+    drawMap();
+    if(keep){var e=$(keep);if(e){e.focus();if(e.type==='text'&&e.setSelectionRange){var n=e.value.length;try{e.setSelectionRange(n,n)}catch(x){}}}}
+    var b=$('bubbles');if(b)b.scrollTop=b.scrollHeight;
+  }
+
+  /* ---------- actions ---------- */
+  function sendRequest(key){
+    var m=S.cache[key];if(!m||reqFor(key))return;
+    var r=m.r,first=r.who.split(' ')[0];
+    var t=threadFor(key,r.who,m.from+' → '+m.to+' · '+fd(m.date),nearest(m.pa.pt),t12(m.l.time));
+    t.msgs.push({me:true,t:'Hi '+first+', I would like to join your ride from '+m.from+' at '+t12(m.pick)+'. I will bring my own helmet.',at:nowHM()});
+    S.confirm=null;S.helm=false;
+    if(r.ownerAcct){
+      var lq={id:'lr'+(S.nid++),key:key,who:S.name,ownerWho:r.who,phone:S.phone,ownerAcct:r.ownerAcct,requesterAcct:S.acct,rideId:r.id,from:m.from,to:m.to,date:m.date,pick:m.pick,time:m.pick,fare:m.fare,state:'pending'};
+      liveReqs.unshift(lq);
+      toast('Request sent to '+first+'. You’ll see their reply once they respond.');
+      render();
+      return;
+    }
+    var q={key:key,who:r.who,from:m.from,to:m.to,date:m.date,pick:m.pick,fare:m.fare,state:'pending'};
+    S.reqs.unshift(q);
+    toast('Request sent to '+first);
+    setTimeout(function(){
+      if(S.reqs.indexOf(q)<0)return;
+      var ok=Math.random()<0.8;
+      if(ok){
+        q.state='accepted';
+        t.msgs.push({me:false,t:'Accepted! Meet me near '+nearest(m.pa.pt)+' at '+t12(m.pick)+'. Please wear your helmet.',at:nowHM()});
+        if(!(S.tab==='inbox'&&S.thread===t.id))t.unread++;
+        pushNotify(first+' accepted your request','Meet near '+nearest(m.pa.pt)+' at '+t12(m.pick)+'. Carry your helmet.','ok',function(){openThread(t.id)});
+        render();
+        showHelmet(first);
+      }else{
+        var reason=DECLINE_REASONS[Math.floor(Math.random()*DECLINE_REASONS.length)];
+        q.state='declined';q.reason=reason;
+        t.msgs.push({me:false,t:'Sorry, I cannot take you this time: '+reason+'.',at:nowHM()});
+        if(!(S.tab==='inbox'&&S.thread===t.id))t.unread++;
+        pushNotify(first+' declined your request',reason,'no',function(){openThread(t.id)});
+        render();
+      }
+    },2200);
+    render();
+  }
+  function reply(t,text){
+    var x=text.toLowerCase();
+    if(/helmet/.test(x))return 'Yes, please bring your own helmet. I will not start the ride without it.';
+    if(/fare|price|rate|pay|cost|money/.test(x))return 'The fare is shown on the ride. It is a fuel cost share, settle it between us at the end of the trip.';
+    if(/where|pickup|pick|location|meet/.test(x))return 'I will wait near '+(t.pick||'your pickup point')+'. I will share my live location when I leave.';
+    if(/when|time|late|early/.test(x))return 'I leave at '+(t.leave||'the posted time')+' sharp. Please be ready 5 minutes early.';
+    if(/thank/.test(x))return 'Anytime. Ride safe!';
+    return 'Sounds good. See you at the pickup point.';
+  }
+  function openThread(id){S.tab='inbox';S.inboxTab='msg';S.thread=id;var t=S.threads.filter(function(x){return x.id===id})[0];if(t)t.unread=0;render()}
+  function postRide(){
+    var o=S.offer;o.err='';
+    var from=canon(o.from),to=canon(o.to),via=o.via?canon(o.via):'';
+    if(!from||!to){o.err='Choose the start and end places from the list.';return render()}
+    if(from===to){o.err='Start and end must be different places.';return render()}
+    if(o.via&&!via){o.err='Choose the stop from the list, or clear it.';return render()}
+    if(!o.bike.trim()){o.err='Enter your bike, for example Activa 6G.';return render()}
+    if(!(o.rate>=0&&o.rate<=8)){o.err='Fare must be between ₹0 and ₹8 per km.';return render()}
+    if(!o.repeat&&!o.date){o.err='Pick a date for your ride.';return render()}
+    var route=[from];if(via&&via!==from&&via!==to)route.push(via);route.push(to);
+    var r={id:'m'+(S.nid++),who:S.name,mine:true,ownerAcct:S.acct,bike:o.bike.trim(),repeat:o.repeat,date:o.date,time:o.time,rtime:o.ret?o.rtime:'',rate:+o.rate,route:route};
+    rides.push(r);S.mine.unshift(r);S.tab='rides';
+    toast('Ride posted');
+    render();
+  }
+
+  function onClick(e){
+    var tb=e.target.closest('[data-tab]');
+    if(tb){S.tab=tb.getAttribute('data-tab');S.nav=null;S.declining=null;S.sharing=null;if(S.tab!=='inbox')S.thread=null;render();return}
+    var t=e.target.closest('[data-act]');if(!t)return;
+    var act=t.getAttribute('data-act'),id=t.getAttribute('data-id');
+    switch(act){
+      case 'sel':S.touched=true;S.sel=S.sel===id?null:id;S.confirm=null;S.helm=false;S.nav=null;break;
+      case 'swap':var x=S.from;S.from=S.to;S.to=x;S.sel=null;S.touched=false;S.nav=null;break;
+      case 'trip':S.trip=id;S.sel=null;S.touched=false;break;
+      case 'connect':S.confirm=id;S.helm=false;break;
+      case 'noconf':S.confirm=null;S.helm=false;break;
+      case 'send':if(!S.helm)return;sendRequest(id);return;
+      case 'weeksend':if(!S.helm)return;(S.weekKeys||[]).forEach(function(k){sendRequest(k)});return;
+      case 'msg':var m=S.cache[id];if(m){var th=threadFor(id,m.r.who,m.from+' → '+m.to+' · '+fd(m.date),nearest(m.pa.pt),t12(m.l.time));openThread(th.id)}return;
+      case 'msgreq':openThread(id);return;
+      case 'navstart':S.nav=0;break;
+      case 'navnext':S.nav=Math.min((S.nav||0)+1,S.steps.length-1);break;
+      case 'navstop':S.nav=null;break;
+      case 'oswap':var y=S.offer.from;S.offer.from=S.offer.to;S.offer.to=y;break;
+      case 'rate':S.offer.rate=+id;break;
+      case 'post':postRide();return;
+      case 'saverate':
+        var inp=$('mr-'+id),v=inp?parseFloat(inp.value):NaN,r=S.mine.filter(function(z){return z.id===id})[0];
+        if(!r)return;if(!(v>=0&&v<=8)){toast('Fare must be between ₹0 and ₹8 per km');return}
+        r.rate=v;toast('Fare updated to '+(v?'₹'+v+' per km':'Free'));break;
+      case 'cancelride':
+        S.mine=S.mine.filter(function(z){return z.id!==id});rides=rides.filter(function(z){return z.id!==id});toast('Ride cancelled');break;
+      case 'cancelreq':
+        liveReqs=liveReqs.filter(function(z){return z.key!==id});
+        S.reqs=S.reqs.filter(function(z){return z.key!==id});toast('Request cancelled');break;
+      case 'cancelbook':S.cancelling=id;S.cancelReason=null;break;
+      case 'cancelchip':S.cancelReason=+id;break;
+      case 'cancelback':S.cancelling=null;S.cancelReason=null;break;
+      case 'cancelsend':
+        if(S.cancelReason==null)return;
+        var qc=reqFor(id);
+        if(qc){
+          var reason=CANCEL_REASONS[S.cancelReason];
+          qc.state='cancelled';qc.reason=reason;qc.cancelNotified=false;
+          var qcr=rides.filter(function(z){return z.id===qc.rideId})[0];if(qcr)qcr.taken=false;
+          toast('Booking cancelled. '+(qc.ownerWho||qc.who).split(' ')[0]+' will be notified.');
+        }
+        S.cancelling=null;S.cancelReason=null;break;
+      case 'itab':S.inboxTab=id;S.thread=null;S.declining=null;break;
+      case 'open':openThread(id);return;
+      case 'back':S.thread=null;break;
+      case 'acc':
+        var qa=S.incoming.filter(function(z){return z.id===id})[0];
+        if(qa){
+          qa.state='accepted';var fn=qa.who.split(' ')[0];
+          var qar=rides.filter(function(z){return z.id===qa.rideId})[0];if(qar)qar.taken=true;
+          toast('Accepted. '+fn+' will bring a helmet.');
+          pushNotify('You accepted '+fn+'’s request','Meet near '+qa.from+' at '+t12(qa.time)+'. '+fn+' will bring their own helmet.','ok');
+          showHelmet(fn);
+        }break;
+      case 'dec':S.declining=id;S.declineReason=null;break;
+      case 'declchip':S.declineReason=+id;break;
+      case 'declcancel':S.declining=null;S.declineReason=null;break;
+      case 'declsend':
+        var qd=S.incoming.filter(function(z){return z.id===id})[0];
+        if(qd&&S.declineReason!=null){
+          var reason=DECLINE_REASONS[S.declineReason];
+          qd.state='declined';qd.reason=reason;
+          toast('Request declined');
+          pushNotify('You declined '+qd.who.split(' ')[0]+'’s request',reason,'no');
+        }
+        S.declining=null;S.declineReason=null;break;
+      case 'sendotp':
+        var k=S.kyc,digits=k.aad.replace(/\D/g,'');
+        if(!/^[2-9]\d{11}$/.test(digits)){k.err='Enter your 12-digit Aadhaar number. It cannot start with 0 or 1.'}
+        else if(!k.consent){k.err='Please tick the consent box to continue.'}
+        else{k.err='';k.last4=digits.slice(-4);k.state='otp'}
+        break;
+      case 'resend':toast('OTP sent again');return;
+      case 'verify':
+        var o=$('otp'),val=o?o.value.trim():'';
+        if(val!==DEMO_OTP){S.kyc.err='That OTP does not match. Check the code and try again.'}
+        else{S.kyc.err='';S.kyc.state='verified';S.kyc.aad='';var snm=$('sname'),fn=(snm&&snm.value.trim())||S.name||'Rider';S.kyc.name=fn.indexOf(' ')>-1?fn:fn+' Sharma';S.kyc.dob='14 Mar 1996';toast('Aadhaar verified')}
+        break;
+      case 'kreset':S.kyc={state:'none',aad:'',consent:false,err:'',last4:'',name:'',dob:''};break;
+      case 'sharelive':
+        S.sharing=S.sharing===id?null:id;
+        if(S.sharing&&!(S.shareLoc&&S.shareLoc.id===id)&&navigator.geolocation){
+          navigator.geolocation.getCurrentPosition(function(pos){
+            S.shareLoc={id:id,link:'https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude};
+            render();
+          },function(){},{timeout:4000});
+        }
+        break;
+      case 'shareclose':S.sharing=null;break;
+      case 'geoloc':
+        var fid=id;
+        if(!navigator.geolocation){toast('Location is not available on this device or browser.');break}
+        S.locating=fid;
+        navigator.geolocation.getCurrentPosition(function(pos){
+          var place=nearestTo(pos.coords.latitude,pos.coords.longitude);
+          if(fid==='from'||fid==='to'){S[fid]=place;S.sel=null;S.touched=false}
+          else if(fid==='ofrom'||fid==='oto'){S.offer[fid.slice(1)]=place}
+          S.locating=null;
+          toast('Using '+place+' as your current location');
+          render();
+        },function(err){
+          S.locating=null;
+          toast(err&&err.code===1?'Location permission denied. Please allow access or pick a place from the list.':'Could not get your location. Please pick a place from the list.');
+          render();
+        },{enableHighAccuracy:true,timeout:6000});
+        break;
+    }
+    render();
+  }
+  function onChange(e){
+    var i=e.target.id,v=e.target.value;
+    if(i==='from'||i==='to'){var c=canon(v);S[i]=c||v;S.sel=null;S.touched=false;S.nav=null}
+    else if(i==='date'){S.date=v||S.date;if(S.rdate<S.date)S.rdate=S.date;S.sel=null;S.touched=false}
+    else if(i==='rdate'){S.rdate=v||S.date;S.sel=null;S.touched=false}
+    else if(i==='wtime'){S.leaveTime=v;S.sel=null;S.touched=false}
+    else if(i==='rwtime'){S.rleaveTime=v;S.sel=null;S.touched=false}
+    else if(i==='helm'){S.helm=e.target.checked}
+    else if(i==='womenOnly'){S.womenOnly=e.target.checked;S.sel=null;S.touched=false}
+    else if(i==='autoWeek'){S.autoWeek=e.target.checked;S.sel=null;S.touched=false;S.helm=false}
+    else if(i==='ofrom'||i==='oto'||i==='ovia'){var cc=canon(v);S.offer[i.slice(1)]=cc||v}
+    else if(i==='odate')S.offer.date=v;
+    else if(i==='otime')S.offer.time=v||S.offer.time;
+    else if(i==='ortime')S.offer.rtime=v||S.offer.rtime;
+    else if(i==='orep')S.offer.repeat=e.target.checked;
+    else if(i==='oret')S.offer.ret=e.target.checked;
+    else if(i==='obike')S.offer.bike=v;
+    else if(i==='orate'){var n=parseFloat(v);S.offer.rate=isNaN(n)?0:Math.max(0,Math.min(8,n))}
+    else if(i==='kconsent'){S.kyc.consent=e.target.checked;return}
+    else if(i==='aad'){return}
+    else return;
+    render();
+  }
+  function onInput(e){
+    var i=e.target.id;
+    if(i==='rad'){S.radius=+e.target.value;S.sel=null;S.touched=false;render()}
+    else if(i==='aad'){var f=fmtAad(e.target.value);e.target.value=f;S.kyc.aad=f.replace(/\D/g,'')}
+    else if(i==='otp'){e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)}
+  }
+  function onSubmit(e){
+    if(e.target.id!=='msgform')return;
+    e.preventDefault();
+    var inp=$('msg'),text=inp.value.trim();if(!text||!S.thread)return;
+    var t=S.threads.filter(function(x){return x.id===S.thread})[0];if(!t)return;
+    t.msgs.push({me:true,t:text,at:nowHM()});inp.value='';render();
+    setTimeout(function(){
+      t.msgs.push({me:false,t:reply(t,text),at:nowHM()});
+      if(!(S.tab==='inbox'&&S.thread===t.id))t.unread++;
+      render();
+    },1300);
+  }
+  $('view').addEventListener('click',onClick);
+  $('tabs').addEventListener('click',onClick);
+  $('view').addEventListener('change',onChange);
+  $('view').addEventListener('input',onInput);
+  $('view').addEventListener('submit',onSubmit);
+
+  /* ---------- hero route, login ---------- */
+  var loginEl=$('login'),appEl=$('app'),heroEl=document.querySelector('.hero');
+  function drawRoute(){
+    var w=heroEl.clientWidth,h=heroEl.clientHeight;if(!w||!h)return;
+    var sx=34,sy=h-34,ex=w-38,ey=38,r=$('route');
+    r.setAttribute('viewBox','0 0 '+w+' '+h);
+    $('rpath').setAttribute('d','M'+sx+' '+sy+' C'+(.28*w)+' '+sy+' '+(.3*w)+' '+(.58*h)+' '+(.5*w)+' '+(.5*h)+' S'+(.72*w)+' '+(.16*h)+' '+ex+' '+ey);
+    $('rstart').setAttribute('transform','translate('+sx+' '+sy+') rotate(-7)');
+    $('rend').setAttribute('transform','translate('+ex+' '+ey+') rotate(7)');
+  }
+  if(window.ResizeObserver)new ResizeObserver(drawRoute).observe(heroEl);
+  window.addEventListener('resize',drawRoute);drawRoute();
+  function fx(h){$('aurora').hidden=h;$('ticker').hidden=h}
+  var uid=$('uid'),upw=$('upw'),lerr=$('lerr'),lbtn=$('lbtn');
+  function enterApp(name,welcomeMsg,phone,acct){
+    S.name=name;S.phone=phone||'';S.acct=acct||S.acct||'';
+    $('hi').innerHTML='Hey, welcome to Pillion, <b>'+esc(S.name)+'</b>!';
+    if(!S.threads.length){
+      var t=threadFor('team','Pillion iT','Welcome');
+      t.msgs.push({me:false,t:welcomeMsg||('Welcome '+S.name+'! Every ride giver here is Aadhaar verified, and co-riders bring their own helmet. Message riders here before you meet.'),at:nowHM()});t.unread=1;
+    }
+    loginEl.hidden=true;fx(true);appEl.hidden=false;render();window.scrollTo(0,0);
+  }
+  $('loginform').addEventListener('submit',function(e){
+    e.preventDefault();
+    var id=uid.value.trim(),pw=upw.value;
+    if(id.length<3){lerr.textContent='Enter your email or phone number.';uid.focus();return}
+    if(pw.length<4){lerr.textContent='Enter your password. It needs at least 4 characters.';upw.focus();return}
+    lerr.textContent='';lbtn.disabled=true;lbtn.textContent='Signing in...';
+    setTimeout(function(){
+      lbtn.disabled=false;lbtn.textContent='Sign in';upw.value='';
+      enterApp(nameFrom(id),undefined,undefined,id.toLowerCase());
+    },700);
+  });
+  $('showpw').addEventListener('click',function(){
+    var show=upw.type==='password';upw.type=show?'text':'password';
+    this.setAttribute('aria-pressed',String(show));var lb=show?'Hide password':'Show password';this.setAttribute('aria-label',lb);this.title=lb;
+  });
+  $('demo').addEventListener('click',function(){uid.value='rohan@gmail.com';upw.value='pillion';lerr.textContent='';lbtn.focus()});
+  $('helmok').addEventListener('click',closeHelmet);
+  $('helmoverlay').addEventListener('click',function(e){if(e.target===this)closeHelmet()});
+  $('logout').addEventListener('click',function(){
+    S.nav=null;S.tab='find';S.thread=null;S.phone='';S.acct='';S.mine=[];S.reqs=[];S.threads=[];appEl.hidden=true;loginEl.hidden=false;fx(false);uid.value='';
+    signupform.reset();SU={gender:'',purpose:'find',photo:''};
+    signupform.querySelectorAll('[data-act=purpose],[data-act=gender]').forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-act')==='purpose'&&x.getAttribute('data-id')==='find')});
+    $('avimg').hidden=true;
+    S.kyc={state:'none',aad:'',consent:false,err:'',last4:'',name:'',dob:''};renderSKyc();
+    closeOtp();
+    document.querySelector('.authseg [data-id=in]').click();
+    uid.focus();
+  });
+
+  /* ---------- forgot password / OTP sign in ---------- */
+  var otplogin=$('otplogin'),otpstep1=$('otpstep1'),otpstep2=$('otpstep2');
+  var otpphone=$('otpphone'),otpcode=$('otpcode'),otperr1=$('otperr1'),otperr2=$('otperr2');
+  var otpState={id:'',kind:'phone'};
+  function fmtPhone(v){return String(v).replace(/\D/g,'').slice(0,10)}
+  function fmtPhoneShow(v){return v.replace(/(\d{5})(\d{5})/,'$1 $2')}
+  function openOtp(forgot){
+    $('otptitle').textContent=forgot?'Reset with OTP':'Sign in with OTP';
+    $('otpsub').textContent=forgot?'Forgot your password? Verify your phone or email and we will sign you in, no password needed.':'Skip the password. We will send a one-time code to your phone or email.';
+    otperr1.textContent='';otperr2.textContent='';otpcode.value='';otpphone.value='';
+    otpstep1.hidden=false;otpstep2.hidden=true;
+    signinform.hidden=true;signupform.hidden=true;otplogin.hidden=false;
+    document.querySelectorAll('.authseg button').forEach(function(x){x.setAttribute('aria-pressed','false')});
+    otpphone.focus();
+  }
+  function closeOtp(){
+    otplogin.hidden=true;signinform.hidden=false;
+    document.querySelector('.authseg [data-id=in]').setAttribute('aria-pressed','true');
+  }
+  $('forgotpw').addEventListener('click',function(){openOtp(true)});
+  $('otpbtn').addEventListener('click',function(){openOtp(false)});
+  $('otpback').addEventListener('click',closeOtp);
+  otpphone.addEventListener('input',function(){if(!/[^\d\s]/.test(this.value))this.value=fmtPhone(this.value)});
+  otpcode.addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,6)});
+  function sendOtp(){
+    var raw=otpphone.value.trim();
+    if(raw.indexOf('@')>-1){
+      if(!isEmail(raw)){otperr1.textContent='Enter a valid email address.';otpphone.focus();return}
+      otpState.id=raw;otpState.kind='email';$('otpphoneshow').textContent=raw;
+    }else{
+      var digits=fmtPhone(raw);
+      if(!/^[6-9]\d{9}$/.test(digits)){otperr1.textContent='Enter a valid 10-digit mobile number, or an email address.';otpphone.focus();return}
+      otpState.id=digits;otpState.kind='phone';$('otpphoneshow').textContent=fmtPhoneShow(digits);
+    }
+    otperr1.textContent='';
+    otpstep1.hidden=true;otpstep2.hidden=false;otpcode.value='';otperr2.textContent='';otpcode.focus();
+  }
+  $('otpsend').addEventListener('click',sendOtp);
+  $('otpresend').addEventListener('click',function(){otperr2.textContent='';otpcode.value='';toast('Code sent again to '+(otpState.kind==='phone'?fmtPhoneShow(otpState.id):otpState.id));otpcode.focus()});
+  $('otpchange').addEventListener('click',function(){otpstep1.hidden=false;otpstep2.hidden=true;otpphone.value=otpState.id;otperr2.textContent='';otpphone.focus()});
+  $('otpverify').addEventListener('click',function(){
+    if(otpcode.value.trim()!==DEMO_OTP){otperr2.textContent='That OTP does not match. Check the code and try again.';otpcode.focus();return}
+    otperr2.textContent='';var btn=this;btn.disabled=true;btn.textContent='Signing in...';
+    setTimeout(function(){
+      btn.disabled=false;btn.textContent='Verify & sign in';
+      var name=nameFrom(otpState.kind==='email'?otpState.id.split('@')[0]:otpState.id);name=/^\d+$/.test(name)?'Rider':name;
+      otplogin.hidden=true;enterApp(name,undefined,undefined,otpState.id.toLowerCase());
+    },700);
+  });
+
+  /* ---------- sign up ---------- */
+  var SU={gender:'',purpose:'find',photo:''};
+  var signinform=$('loginform'),signupform=$('signupform');
+  document.querySelector('.authseg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-act=authtab]');if(!b)return;
+    var up=b.getAttribute('data-id')==='up';
+    this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});
+    signinform.hidden=up;signupform.hidden=!up;
+    (up?$('sname'):uid).focus();
+  });
+  signupform.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;
+    var act=b.getAttribute('data-act'),id=b.getAttribute('data-id');
+    if(act==='purpose'){SU.purpose=id;this.querySelectorAll('[data-act=purpose]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))})}
+    else if(act==='gender'){SU.gender=id;this.querySelectorAll('[data-act=gender]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))})}
+  });
+  $('avfile').addEventListener('change',function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var reader=new FileReader();
+    reader.onload=function(){SU.photo=reader.result;var img=$('avimg');img.src=SU.photo;img.hidden=false};
+    reader.readAsDataURL(f);
+  });
+  function isEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
+  signupform.addEventListener('click',function(e){
+    var t=e.target.closest('[data-act]');if(!t)return;
+    var act=t.getAttribute('data-act');
+    if(act==='sendotp'){
+      var k=S.kyc,digits=k.aad.replace(/\D/g,'');
+      if(!/^[2-9]\d{11}$/.test(digits)){k.err='Enter your 12-digit Aadhaar number. It cannot start with 0 or 1.'}
+      else if(!k.consent){k.err='Please tick the consent box to continue.'}
+      else{k.err='';k.last4=digits.slice(-4);k.state='otp'}
+      renderSKyc();
+    }else if(act==='resend'){toast('OTP sent again')}
+    else if(act==='verify'){
+      var o=$('otp'),val=o?o.value.trim():'';
+      if(val!==DEMO_OTP){S.kyc.err='That OTP does not match. Check the code and try again.'}
+      else{S.kyc.err='';S.kyc.state='verified';S.kyc.aad='';var snm=$('sname'),fn=(snm&&snm.value.trim())||S.name||'Rider';S.kyc.name=fn.indexOf(' ')>-1?fn:fn+' Sharma';S.kyc.dob='14 Mar 1996';toast('Aadhaar verified')}
+      renderSKyc();
+    }else if(act==='kreset'){S.kyc={state:'none',aad:'',consent:false,err:'',last4:'',name:'',dob:''};renderSKyc()}
+  });
+  signupform.addEventListener('change',function(e){
+    if(e.target.id==='kconsent')S.kyc.consent=e.target.checked;
+  });
+  signupform.addEventListener('input',function(e){
+    if(e.target.id==='aad'){var f=fmtAad(e.target.value);e.target.value=f;S.kyc.aad=f.replace(/\D/g,'')}
+    else if(e.target.id==='otp'){e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)}
+    else if(e.target.id==='sphone'){e.target.value=fmtPhone(e.target.value)}
+  });
+  signupform.addEventListener('submit',function(e){
+    e.preventDefault();
+    var serr=$('serr'),sbtn=$('sbtn');
+    var name=$('sname').value.trim(),dob=$('sdob').value,email=$('semail').value.trim(),phone=fmtPhone($('sphone').value),suid=$('suid').value.trim(),spw=$('supw').value;
+    if(name.length<3){serr.textContent='Enter your full name.';$('sname').focus();return}
+    if(!dob){serr.textContent='Enter your date of birth.';$('sdob').focus();return}
+    var age=(new Date()-new Date(dob))/3.15576e10;
+    if(age<18){serr.textContent='You must be 18 or older to use Pillion iT.';$('sdob').focus();return}
+    if(!SU.gender){serr.textContent='Select your gender.';return}
+    if(!isEmail(email)){serr.textContent='Enter a valid email address.';$('semail').focus();return}
+    if(!/^[6-9]\d{9}$/.test(phone)){serr.textContent='Enter a valid 10-digit phone number.';$('sphone').focus();return}
+    if(suid.length<3){serr.textContent='Choose a user ID of at least 3 characters.';$('suid').focus();return}
+    if(spw.length<4){serr.textContent='Create a password of at least 4 characters.';$('supw').focus();return}
+    if(S.kyc.state!=='verified'){serr.textContent='Verify your Aadhaar to create your account.';$('skyc').scrollIntoView({behavior:'smooth',block:'center'});return}
+    serr.textContent='';sbtn.disabled=true;sbtn.textContent='Creating account...';
+    setTimeout(function(){
+      sbtn.disabled=false;sbtn.textContent='Create account';
+      var first=name.split(' ')[0];
+      if(SU.purpose==='offer')S.tab='offer';
+      enterApp(first,'Welcome to Pillion iT, '+first+'! Your profile is saved. '+(SU.purpose==='offer'?'Head to Offer a ride to post your first ride.':'Head to Find a ride to see who is going your way.'),fmtPhoneShow(phone),email.toLowerCase());
+    },800);
+  });
+
+  render();
+  renderSKyc();
+})();
+</script>
+
+</body></html>
